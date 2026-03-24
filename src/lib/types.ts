@@ -2,7 +2,6 @@
 // RUNNING
 // ============================================================
 export interface RunningSession {
-  sheetRow: number;
   week: number;
   date: string;
   day: string;
@@ -26,7 +25,6 @@ export interface RunningSession {
 // CYCLING
 // ============================================================
 export interface CyclingSession {
-  sheetRow: number;
   week: number;
   date: string;
   day: string;
@@ -54,7 +52,6 @@ export interface WeightsExerciseData {
 }
 
 export interface WeightsSession {
-  sheetRow: number;
   week: number;
   date: string;
   exercises: Record<string, WeightsExerciseData>;

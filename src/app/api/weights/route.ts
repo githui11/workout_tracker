@@ -1,12 +1,37 @@
 import { NextResponse } from 'next/server';
-import { readTab, batchUpdate } from '@/lib/sheets';
-import { parseWeights, getColumnLetters } from '@/lib/parse-weights';
+import { neon } from '@neondatabase/serverless';
 
 export async function GET() {
   try {
-    const rows = await readTab('Weights');
-    const sections = parseWeights(rows);
-    return NextResponse.json(sections);
+    const sql = neon(process.env.DATABASE_URL!);
+
+    const sections = await sql`
+      SELECT * FROM weights_sections ORDER BY id ASC
+    `;
+
+    const result = [];
+    for (const section of sections) {
+      const sessions = await sql`
+        SELECT * FROM weights_sessions
+        WHERE section_key = ${section.section_key}
+        ORDER BY date ASC
+      `;
+
+      result.push({
+        sectionKey: section.section_key,
+        title: section.title,
+        dayOfWeek: section.day_of_week,
+        location: section.location,
+        exerciseNames: (section.exercises as { name: string }[]).map((e) => e.name),
+        sessions: sessions.map((s) => ({
+          week: s.week,
+          date: s.date instanceof Date ? s.date.toISOString().split('T')[0] : String(s.date).split('T')[0],
+          exercises: s.exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>,
+        })),
+      });
+    }
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Failed to fetch weights data:', error);
     return NextResponse.json({ error: 'Failed to fetch weights data' }, { status: 500 });
@@ -15,6 +40,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const sql = neon(process.env.DATABASE_URL!);
     const body = await request.json();
     const { sectionKey, date, exercises } = body as {
       sectionKey: string;
@@ -22,58 +48,37 @@ export async function POST(request: Request) {
       exercises: Record<string, { weight?: string; sets: (number | null)[] }>;
     };
 
-    // Re-read the sheet to find exact row and column positions
-    const rows = await readTab('Weights');
-    const sections = parseWeights(rows);
-    const section = sections.find((s) => s.sectionKey === sectionKey);
+    // Fetch existing session exercises
+    const existing = await sql`
+      SELECT exercises FROM weights_sessions
+      WHERE section_key = ${sectionKey} AND date = ${date}
+    `;
 
-    if (!section) {
-      return NextResponse.json({ error: `Section ${sectionKey} not found` }, { status: 404 });
-    }
-
-    const session = section.sessions.find((s) => s.date === date);
-    if (!session) {
+    if (existing.length === 0) {
       return NextResponse.json({ error: `No session found for date ${date} in ${sectionKey}` }, { status: 404 });
     }
 
-    // Find the header row for this section (it's the row before the first data row, or we re-scan)
-    // The header row is at sheetRow - (session index in section + 1)
-    const sessionIdx = section.sessions.indexOf(session);
-    const headerSheetRow = section.sessions[0].sheetRow - 1;
-    const headerRow = rows[headerSheetRow - 1]; // Convert to 0-indexed
+    const existingExercises = existing[0].exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>;
 
-    const colLetters = getColumnLetters(headerRow);
-    const updates: { range: string; values: (string | number)[][] }[] = [];
-    const row = session.sheetRow;
-
-    for (const [exerciseName, data] of Object.entries(exercises)) {
-      const cols = colLetters[exerciseName];
-      if (!cols) continue;
-
-      // Update weight if provided and column exists
-      if (data.weight && cols.weightCol) {
-        updates.push({
-          range: `${cols.weightCol}${row}`,
-          values: [[data.weight]],
-        });
-      }
-
-      // Update sets (S1-S4)
-      if (data.sets && cols.setCols.length > 0) {
-        const firstSetCol = cols.setCols[0];
-        const lastSetCol = cols.setCols[cols.setCols.length - 1];
-        updates.push({
-          range: `${firstSetCol}${row}:${lastSetCol}${row}`,
-          values: [data.sets.map((s) => s ?? '')],
-        });
-      }
+    // Merge updates
+    const updated = { ...existingExercises };
+    for (const [name, data] of Object.entries(exercises)) {
+      const sets = data.sets;
+      const total = sets.reduce((sum, s) => (sum as number) + (s || 0), 0) as number;
+      updated[name] = {
+        weight: data.weight || updated[name]?.weight || '',
+        sets,
+        total: sets.some((s) => s !== null) ? total : null,
+      };
     }
 
-    if (updates.length > 0) {
-      await batchUpdate('Weights', updates);
-    }
+    await sql`
+      UPDATE weights_sessions
+      SET exercises = ${JSON.stringify(updated)}
+      WHERE section_key = ${sectionKey} AND date = ${date}
+    `;
 
-    return NextResponse.json({ success: true, row, updatesCount: updates.length });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to update weights data:', error);
     return NextResponse.json({ error: 'Failed to update weights data' }, { status: 500 });

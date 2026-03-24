@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import { readTab, updateCells } from '@/lib/sheets';
-import { parseCycling } from '@/lib/parse-cycling';
+import { getDb } from '@/lib/db';
 
 export async function GET() {
   try {
-    const rows = await readTab('Cycling');
-    const sessions = parseCycling(rows);
-    return NextResponse.json(sessions);
+    const sql = getDb();
+    const rows = await sql`SELECT * FROM cycling_sessions ORDER BY date ASC`;
+    return NextResponse.json(rows);
   } catch (error) {
     console.error('Failed to fetch cycling data:', error);
     return NextResponse.json({ error: 'Failed to fetch cycling data' }, { status: 500 });
@@ -15,37 +14,29 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const sql = getDb();
     const body = await request.json();
     const { date, actualDuration, movingTime, resistanceLevel, avgHeartRate, avgSpeed, elevationGain, maxElevation, calories, rpe, notes } = body;
 
-    const rows = await readTab('Cycling');
-    const sessions = parseCycling(rows);
-    const session = sessions.find((s) => s.date === date);
+    const result = await sql`
+      UPDATE cycling_sessions SET
+        actual_duration = ${actualDuration || null},
+        moving_time = ${movingTime || null},
+        resistance_level = ${resistanceLevel || null},
+        avg_heart_rate = ${avgHeartRate || null},
+        avg_speed = ${avgSpeed || null},
+        elevation_gain = ${elevationGain || null},
+        max_elevation = ${maxElevation || null},
+        calories = ${calories || null},
+        rpe = ${rpe || null},
+        notes = ${notes || null}
+      WHERE date = ${date}
+      RETURNING id`;
 
-    if (!session) {
-      return NextResponse.json({ error: `No session found for date ${date}` }, { status: 404 });
+    if (result.length === 0) {
+      return NextResponse.json({ error: 'No session found for that date' }, { status: 404 });
     }
-
-    // Update columns F through O (6th to 15th, 0-indexed: 5-14)
-    // F=Actual Duration, G=Moving Time, H=Resistance, I=Avg HR,
-    // J=Avg Speed, K=Elevation Gain, L=Max Elevation, M=Calories, N=RPE, O=Notes
-    const row = session.sheetRow;
-    await updateCells('Cycling', `F${row}:O${row}`, [
-      [
-        actualDuration ?? '',
-        movingTime ?? '',
-        resistanceLevel ?? '',
-        avgHeartRate ?? '',
-        avgSpeed ?? '',
-        elevationGain ?? '',
-        maxElevation ?? '',
-        calories ?? '',
-        rpe ?? '',
-        notes ?? '',
-      ],
-    ]);
-
-    return NextResponse.json({ success: true, row });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to update cycling data:', error);
     return NextResponse.json({ error: 'Failed to update cycling data' }, { status: 500 });
