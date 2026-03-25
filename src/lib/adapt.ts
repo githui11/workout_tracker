@@ -225,7 +225,7 @@ function parseSinglePace(pace: string | null): number | null {
  * upcoming session's targets in the database.
  */
 export async function applyAdaptations(
-  sql: NeonQueryFunction,
+  sql: NeonQueryFunction<false, false>,
   category: 'running' | 'cycling' | 'weights',
   savedDate: string,
   sectionKey?: string

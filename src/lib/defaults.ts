@@ -14,7 +14,7 @@ export function getWeekForDate(date: string): number {
   return Math.max(1, Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1);
 }
 
-export async function getRunningDefaults(sql: NeonQueryFunction) {
+export async function getRunningDefaults(sql: NeonQueryFunction<false, false>) {
   const rows = await sql`
     SELECT phase, workout_type, target_distance, target_pace
     FROM running_sessions
@@ -37,7 +37,7 @@ export async function getRunningDefaults(sql: NeonQueryFunction) {
   };
 }
 
-export async function getCyclingDefaults(sql: NeonQueryFunction) {
+export async function getCyclingDefaults(sql: NeonQueryFunction<false, false>) {
   const rows = await sql`
     SELECT target_duration
     FROM cycling_sessions
@@ -50,7 +50,7 @@ export async function getCyclingDefaults(sql: NeonQueryFunction) {
   return { targetDuration: 55 };
 }
 
-export async function getWeightsDefaults(sql: NeonQueryFunction, sectionKey: string) {
+export async function getWeightsDefaults(sql: NeonQueryFunction<false, false>, sectionKey: string) {
   const rows = await sql`
     SELECT exercises FROM weights_sections WHERE section_key = ${sectionKey}
   `;
