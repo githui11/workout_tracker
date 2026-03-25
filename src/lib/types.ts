@@ -99,4 +99,6 @@ export interface Adaptation {
   exercise?: string;
   message: string;
   severity: 'info' | 'warning' | 'success';
+  applied?: boolean;
+  adjustedValue?: string;
 }

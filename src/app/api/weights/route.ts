@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
+import { getWeightsDefaults, getWeekForDate } from '@/lib/defaults';
+import { applyAdaptations } from '@/lib/adapt';
 
 export async function GET() {
   try {
@@ -54,31 +56,50 @@ export async function POST(request: Request) {
       WHERE section_key = ${sectionKey} AND date = ${date}
     `;
 
+    let existingExercises: Record<string, { weight: string; sets: (number | null)[]; total: number | null }>;
+
     if (existing.length === 0) {
-      return NextResponse.json({ error: `No session found for date ${date} in ${sectionKey}` }, { status: 404 });
+      // Create ad-hoc session
+      const defaults = await getWeightsDefaults(sql, sectionKey);
+      if (!defaults) {
+        return NextResponse.json({ error: `Unknown section: ${sectionKey}` }, { status: 404 });
+      }
+      existingExercises = defaults;
+      const week = getWeekForDate(date);
+      // Merge submitted data before inserting
+      for (const [name, data] of Object.entries(exercises)) {
+        const sets = data.sets;
+        const total = sets.reduce((sum, s) => (sum as number) + (s || 0), 0) as number;
+        existingExercises[name] = {
+          weight: data.weight || existingExercises[name]?.weight || '',
+          sets,
+          total: sets.some((s) => s !== null) ? total : null,
+        };
+      }
+      await sql`
+        INSERT INTO weights_sessions (section_key, week, date, exercises)
+        VALUES (${sectionKey}, ${week}, ${date}, ${JSON.stringify(existingExercises)})`;
+    } else {
+      existingExercises = existing[0].exercises as typeof existingExercises;
+      // Merge updates
+      for (const [name, data] of Object.entries(exercises)) {
+        const sets = data.sets;
+        const total = sets.reduce((sum, s) => (sum as number) + (s || 0), 0) as number;
+        existingExercises[name] = {
+          weight: data.weight || existingExercises[name]?.weight || '',
+          sets,
+          total: sets.some((s) => s !== null) ? total : null,
+        };
+      }
+      await sql`
+        UPDATE weights_sessions
+        SET exercises = ${JSON.stringify(existingExercises)}
+        WHERE section_key = ${sectionKey} AND date = ${date}`;
     }
 
-    const existingExercises = existing[0].exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>;
+    const adaptations = await applyAdaptations(sql, 'weights', date, sectionKey);
 
-    // Merge updates
-    const updated = { ...existingExercises };
-    for (const [name, data] of Object.entries(exercises)) {
-      const sets = data.sets;
-      const total = sets.reduce((sum, s) => (sum as number) + (s || 0), 0) as number;
-      updated[name] = {
-        weight: data.weight || updated[name]?.weight || '',
-        sets,
-        total: sets.some((s) => s !== null) ? total : null,
-      };
-    }
-
-    await sql`
-      UPDATE weights_sessions
-      SET exercises = ${JSON.stringify(updated)}
-      WHERE section_key = ${sectionKey} AND date = ${date}
-    `;
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, adaptations });
   } catch (error) {
     console.error('Failed to update weights data:', error);
     return NextResponse.json({ error: 'Failed to update weights data' }, { status: 500 });

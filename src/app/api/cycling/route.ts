@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { neon } from '@neondatabase/serverless';
+import { getCyclingDefaults, getDayName, getWeekForDate } from '@/lib/defaults';
+import { applyAdaptations } from '@/lib/adapt';
 
 export async function GET() {
   try {
-    const sql = getDb();
+    const sql = neon(process.env.DATABASE_URL!);
     const rows = await sql`SELECT * FROM cycling_sessions ORDER BY date ASC`;
     return NextResponse.json(rows);
   } catch (error) {
@@ -14,7 +16,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const sql = getDb();
+    const sql = neon(process.env.DATABASE_URL!);
     const body = await request.json();
     const { date, actualDuration, movingTime, resistanceLevel, avgHeartRate, avgSpeed, elevationGain, maxElevation, calories, rpe, notes } = body;
 
@@ -34,9 +36,24 @@ export async function POST(request: Request) {
       RETURNING id`;
 
     if (result.length === 0) {
-      return NextResponse.json({ error: 'No session found for that date' }, { status: 404 });
+      const defaults = await getCyclingDefaults(sql);
+      const week = getWeekForDate(date);
+      const day = getDayName(date);
+      await sql`
+        INSERT INTO cycling_sessions
+          (week, date, day, time, target_duration,
+           actual_duration, moving_time, resistance_level, avg_heart_rate, avg_speed,
+           elevation_gain, max_elevation, calories, rpe, notes)
+        VALUES
+          (${week}, ${date}, ${day}, 'Ad-hoc', ${defaults.targetDuration},
+           ${actualDuration || null}, ${movingTime || null}, ${resistanceLevel || null},
+           ${avgHeartRate || null}, ${avgSpeed || null}, ${elevationGain || null},
+           ${maxElevation || null}, ${calories || null}, ${rpe || null}, ${notes || null})`;
     }
-    return NextResponse.json({ success: true });
+
+    const adaptations = await applyAdaptations(sql, 'cycling', date);
+
+    return NextResponse.json({ success: true, adaptations });
   } catch (error) {
     console.error('Failed to update cycling data:', error);
     return NextResponse.json({ error: 'Failed to update cycling data' }, { status: 500 });

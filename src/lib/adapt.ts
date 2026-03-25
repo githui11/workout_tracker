@@ -1,4 +1,6 @@
+import type { NeonQueryFunction } from '@neondatabase/serverless';
 import { RunningSession, CyclingSession, WeightsSection, Adaptation } from './types';
+import { getCurrentWeek } from './aggregations';
 
 /**
  * Analyze recent sessions and generate adaptation recommendations.
@@ -216,4 +218,164 @@ function parseSinglePace(pace: string | null): number | null {
   const match = pace.match(/(\d+):(\d+)/);
   if (!match) return null;
   return parseInt(match[1]) + parseInt(match[2]) / 60;
+}
+
+/**
+ * After saving a session, run adaptation logic and apply changes to the next
+ * upcoming session's targets in the database.
+ */
+export async function applyAdaptations(
+  sql: NeonQueryFunction,
+  category: 'running' | 'cycling' | 'weights',
+  savedDate: string,
+  sectionKey?: string
+): Promise<Adaptation[]> {
+  const currentWeek = getCurrentWeek();
+
+  // Fetch all data needed for adaptation analysis
+  const [runningRows, cyclingRows, sectionRows] = await Promise.all([
+    sql`SELECT * FROM running_sessions ORDER BY date ASC`,
+    sql`SELECT * FROM cycling_sessions ORDER BY date ASC`,
+    sql`SELECT * FROM weights_sections ORDER BY id ASC`,
+  ]);
+
+  const running: RunningSession[] = runningRows.map((r) => ({
+    week: r.week,
+    date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date).split('T')[0],
+    day: r.day, time: r.time, phase: r.phase, workoutType: r.workout_type,
+    targetDistance: Number(r.target_distance), targetPace: r.target_pace,
+    actualDistance: r.actual_distance !== null ? Number(r.actual_distance) : null,
+    actualPace: r.actual_pace,
+    duration: r.duration !== null ? Number(r.duration) : null,
+    movingTime: r.moving_time, elevationGain: r.elevation_gain, maxElevation: r.max_elevation,
+    warmupDone: r.warmup_done || '', howLegsFeel: r.how_legs_feel || '', notes: r.notes || '',
+  }));
+
+  const cycling: CyclingSession[] = cyclingRows.map((r) => ({
+    week: r.week,
+    date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date).split('T')[0],
+    day: r.day, time: r.time, targetDuration: r.target_duration,
+    actualDuration: r.actual_duration, movingTime: r.moving_time,
+    resistanceLevel: r.resistance_level || '', avgHeartRate: r.avg_heart_rate,
+    avgSpeed: r.avg_speed !== null ? Number(r.avg_speed) : null,
+    elevationGain: r.elevation_gain, maxElevation: r.max_elevation,
+    calories: r.calories, rpe: r.rpe, notes: r.notes || '',
+  }));
+
+  const weights: WeightsSection[] = [];
+  for (const section of sectionRows) {
+    const sessions = await sql`
+      SELECT * FROM weights_sessions WHERE section_key = ${section.section_key} ORDER BY date ASC
+    `;
+    weights.push({
+      sectionKey: section.section_key, title: section.title,
+      dayOfWeek: section.day_of_week, location: section.location,
+      exerciseNames: (section.exercises as { name: string }[]).map((e) => e.name),
+      sessions: sessions.map((s) => ({
+        week: s.week,
+        date: s.date instanceof Date ? s.date.toISOString().split('T')[0] : String(s.date).split('T')[0],
+        exercises: s.exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>,
+      })),
+    });
+  }
+
+  const allAdaptations = generateAdaptations(running, cycling, weights, currentWeek);
+  const relevant = allAdaptations.filter((a) => a.category === category);
+  const applied: Adaptation[] = [];
+
+  if (category === 'running') {
+    const nextRow = await sql`
+      SELECT id, target_distance FROM running_sessions
+      WHERE date > ${savedDate} AND actual_distance IS NULL
+      ORDER BY date ASC LIMIT 1
+    `;
+    if (nextRow.length > 0) {
+      const nextId = nextRow[0].id;
+      let currentTarget = Number(nextRow[0].target_distance);
+      for (const a of relevant) {
+        if (a.type === 'reduce_volume') {
+          const newTarget = Math.round(currentTarget * 0.85 * 10) / 10;
+          await sql`UPDATE running_sessions SET target_distance = ${newTarget} WHERE id = ${nextId}`;
+          applied.push({ ...a, applied: true, adjustedValue: `${newTarget} km` });
+          currentTarget = newTarget;
+        } else if (a.type === 'increase_volume') {
+          const newTarget = Math.round(currentTarget * 1.05 * 10) / 10;
+          await sql`UPDATE running_sessions SET target_distance = ${newTarget} WHERE id = ${nextId}`;
+          applied.push({ ...a, applied: true, adjustedValue: `${newTarget} km` });
+          currentTarget = newTarget;
+        } else {
+          applied.push({ ...a, applied: false });
+        }
+      }
+    }
+  }
+
+  if (category === 'cycling') {
+    const nextRow = await sql`
+      SELECT id, target_duration FROM cycling_sessions
+      WHERE date > ${savedDate} AND actual_duration IS NULL
+      ORDER BY date ASC LIMIT 1
+    `;
+    if (nextRow.length > 0) {
+      const nextId = nextRow[0].id;
+      let currentTarget = Number(nextRow[0].target_duration);
+      for (const a of relevant) {
+        if (a.type === 'reduce_volume') {
+          const newTarget = Math.round(currentTarget * 0.90);
+          await sql`UPDATE cycling_sessions SET target_duration = ${newTarget} WHERE id = ${nextId}`;
+          applied.push({ ...a, applied: true, adjustedValue: `${newTarget} min` });
+          currentTarget = newTarget;
+        } else if (a.type === 'increase_volume') {
+          const newTarget = currentTarget + 10;
+          await sql`UPDATE cycling_sessions SET target_duration = ${newTarget} WHERE id = ${nextId}`;
+          applied.push({ ...a, applied: true, adjustedValue: `${newTarget} min` });
+          currentTarget = newTarget;
+        } else {
+          applied.push({ ...a, applied: false });
+        }
+      }
+    }
+  }
+
+  if (category === 'weights' && sectionKey) {
+    const nextRow = await sql`
+      SELECT id, exercises FROM weights_sessions
+      WHERE section_key = ${sectionKey} AND date > ${savedDate}
+      ORDER BY date ASC LIMIT 1
+    `;
+    if (nextRow.length > 0) {
+      const nextId = nextRow[0].id;
+      const nextExercises = nextRow[0].exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>;
+      let modified = false;
+      for (const a of relevant) {
+        if (a.type === 'increase_weight' && a.exercise && nextExercises[a.exercise]) {
+          const ex = nextExercises[a.exercise];
+          const w = parseFloat(ex.weight);
+          if (!isNaN(w)) {
+            ex.weight = String(w + 2.5);
+            modified = true;
+            applied.push({ ...a, applied: true, adjustedValue: `${ex.weight} kg` });
+          } else {
+            applied.push({ ...a, applied: false });
+          }
+        } else if (a.type === 'deload' && a.exercise && nextExercises[a.exercise]) {
+          const ex = nextExercises[a.exercise];
+          if (ex.sets.length > 3) {
+            ex.sets = ex.sets.slice(0, 3);
+            modified = true;
+            applied.push({ ...a, applied: true, adjustedValue: '3 sets' });
+          } else {
+            applied.push({ ...a, applied: false });
+          }
+        } else {
+          applied.push({ ...a, applied: false });
+        }
+      }
+      if (modified) {
+        await sql`UPDATE weights_sessions SET exercises = ${JSON.stringify(nextExercises)} WHERE id = ${nextId}`;
+      }
+    }
+  }
+
+  return applied.length > 0 ? applied : relevant;
 }

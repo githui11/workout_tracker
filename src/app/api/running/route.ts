@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { neon } from '@neondatabase/serverless';
+import { getRunningDefaults, getDayName, getWeekForDate } from '@/lib/defaults';
+import { applyAdaptations } from '@/lib/adapt';
 
 export async function GET() {
   try {
-    const sql = getDb();
+    const sql = neon(process.env.DATABASE_URL!);
     const rows = await sql`SELECT * FROM running_sessions ORDER BY date ASC`;
     return NextResponse.json(rows);
   } catch (error) {
@@ -14,10 +16,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const sql = getDb();
+    const sql = neon(process.env.DATABASE_URL!);
     const body = await request.json();
     const { date, actualDistance, actualPace, duration, movingTime, elevationGain, maxElevation, warmupDone, howLegsFeel, notes } = body;
 
+    // Try UPDATE first
     const result = await sql`
       UPDATE running_sessions SET
         actual_distance = ${actualDistance || null},
@@ -32,10 +35,28 @@ export async function POST(request: Request) {
       WHERE date = ${date}
       RETURNING id`;
 
+    // If no existing row, INSERT an ad-hoc session
     if (result.length === 0) {
-      return NextResponse.json({ error: 'No session found for that date' }, { status: 404 });
+      const defaults = await getRunningDefaults(sql);
+      const week = getWeekForDate(date);
+      const day = getDayName(date);
+      await sql`
+        INSERT INTO running_sessions
+          (week, date, day, time, phase, workout_type, target_distance, target_pace,
+           actual_distance, actual_pace, duration, moving_time, elevation_gain, max_elevation,
+           warmup_done, how_legs_feel, notes)
+        VALUES
+          (${week}, ${date}, ${day}, 'Ad-hoc', ${defaults.phase}, ${defaults.workoutType},
+           ${defaults.targetDistance}, ${defaults.targetPace},
+           ${actualDistance || null}, ${actualPace || null}, ${duration || null},
+           ${movingTime || null}, ${elevationGain || null}, ${maxElevation || null},
+           ${warmupDone || null}, ${howLegsFeel || null}, ${notes || null})`;
     }
-    return NextResponse.json({ success: true });
+
+    // Apply adaptations to next session
+    const adaptations = await applyAdaptations(sql, 'running', date);
+
+    return NextResponse.json({ success: true, adaptations });
   } catch (error) {
     console.error('Failed to update running data:', error);
     return NextResponse.json({ error: 'Failed to update running data' }, { status: 500 });

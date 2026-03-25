@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { WeightsSection } from '@/lib/types';
+import type { WeightsSection, Adaptation } from '@/lib/types';
 import ProgressChart from '@/components/progress-chart';
 
 type Tab = 'log' | 'history' | 'charts';
@@ -23,13 +23,13 @@ export default function WeightsPage() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
   const [formData, setFormData] = useState<Record<string, { weight: string; sets: string[] }>>({});
+  const [adaptations, setAdaptations] = useState<Adaptation[]>([]);
 
   useEffect(() => {
     fetch('/api/weights')
       .then((r) => r.json())
       .then((data: WeightsSection[]) => {
         setSections(data);
-        // Auto-select today's workout
         const todayDow = new Date().getDay();
         const todayKey = DAY_TO_SECTION[todayDow];
         const match = data.find((s) => s.sectionKey === todayKey);
@@ -41,8 +41,18 @@ export default function WeightsPage() {
 
   const section = sections.find((s) => s.sectionKey === selectedSection);
   const today = new Date().toISOString().split('T')[0];
-  const currentSession = section?.sessions.find((s) => s.date === today) ||
+  const existingSession = section?.sessions.find((s) => s.date === today) ||
     section?.sessions.find((s) => s.date >= today);
+
+  // If no existing session, create a synthetic ad-hoc one from the section template
+  const isAdHoc = !existingSession && !!section;
+  const currentSession = existingSession || (section ? {
+    week: 0,
+    date: today,
+    exercises: Object.fromEntries(
+      section.exerciseNames.map((name) => [name, { weight: '', sets: [null, null, null, null], total: null }])
+    ),
+  } : null);
 
   // Initialize form when section/session changes
   useEffect(() => {
@@ -62,6 +72,7 @@ export default function WeightsPage() {
     e.preventDefault();
     if (!section || !currentSession) return;
     setSaving(true);
+    setAdaptations([]);
     try {
       const exercises: Record<string, { weight?: string; sets: (number | null)[] }> = {};
       for (const [name, data] of Object.entries(formData)) {
@@ -80,8 +91,12 @@ export default function WeightsPage() {
         }),
       });
       if (res.ok) {
+        const data = await res.json();
         setToast('Saved!');
         setTimeout(() => setToast(''), 2000);
+        if (data.adaptations?.length > 0) {
+          setAdaptations(data.adaptations);
+        }
         const updated = await fetch('/api/weights').then((r) => r.json());
         setSections(updated);
       }
@@ -130,6 +145,11 @@ export default function WeightsPage() {
           {currentSession ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="bg-zinc-900 rounded-xl p-3">
+                {isAdHoc && (
+                  <div className="text-xs font-medium text-yellow-400 bg-yellow-500/10 rounded-lg px-2 py-1 mb-2 text-center">
+                    Ad-hoc session
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-400">Date</span>
                   <span>{currentSession.date}</span>
@@ -204,9 +224,26 @@ export default function WeightsPage() {
               </button>
 
               {toast && <p className={`text-center text-sm ${toast === 'Saved!' ? 'text-green-400' : 'text-red-400'}`}>{toast}</p>}
+
+              {adaptations.length > 0 && (
+                <div className="space-y-2">
+                  {adaptations.map((a, i) => (
+                    <div key={i} className={`rounded-xl p-3 text-sm border ${
+                      a.severity === 'warning' ? 'bg-yellow-500/5 border-yellow-500/30 text-yellow-200'
+                        : a.severity === 'success' ? 'bg-green-500/5 border-green-500/30 text-green-200'
+                        : 'bg-blue-500/5 border-blue-500/30 text-blue-200'
+                    }`}>
+                      <p>{a.message}</p>
+                      {a.applied && a.adjustedValue && (
+                        <p className="text-xs mt-1 opacity-75">Next session adjusted to {a.adjustedValue}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </form>
           ) : (
-            <p className="text-zinc-500 text-center py-8">No session found for this section</p>
+            <p className="text-zinc-500 text-center py-8">Select a section above</p>
           )}
         </div>
       )}
