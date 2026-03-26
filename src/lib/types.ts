@@ -35,6 +35,16 @@ export interface CyclingSession {
 }
 
 // ============================================================
+// BODY WEIGHT
+// ============================================================
+export interface BodyWeightEntry {
+  id: number;
+  date: string;
+  weight: number;
+  notes: string;
+}
+
+// ============================================================
 // SUMMARY & ADAPT
 // ============================================================
 export interface WeeklySummary {

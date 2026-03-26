@@ -7,6 +7,7 @@ const tabs = [
   { href: '/', label: 'Home', icon: '⌂' },
   { href: '/running', label: 'Run', icon: '🏃' },
   { href: '/cycling', label: 'Cycle', icon: '🚴' },
+  { href: '/bodyweight', label: 'Weight', icon: '⚖' },
 ];
 
 export default function NavBar() {

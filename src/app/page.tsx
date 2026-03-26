@@ -3,21 +3,26 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import StatCard from '@/components/stat-card';
-import type { WeeklySummary, Adaptation } from '@/lib/types';
+import type { WeeklySummary, Adaptation, BodyWeightEntry } from '@/lib/types';
 
 export default function Dashboard() {
   const [summary, setSummary] = useState<WeeklySummary | null>(null);
   const [adaptations, setAdaptations] = useState<Adaptation[]>([]);
+  const [latestWeight, setLatestWeight] = useState<BodyWeightEntry | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       fetch('/api/summary').then((r) => r.json()),
       fetch('/api/adapt').then((r) => r.json()),
+      fetch('/api/bodyweight').then((r) => r.json()),
     ])
-      .then(([sum, adapt]) => {
+      .then(([sum, adapt, weightEntries]) => {
         setSummary(sum);
         setAdaptations(adapt.adaptations || []);
+        if (Array.isArray(weightEntries) && weightEntries.length > 0) {
+          setLatestWeight(weightEntries[weightEntries.length - 1]);
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -43,7 +48,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <Link href="/running">
           <StatCard
             title="Running"
@@ -58,6 +63,14 @@ export default function Dashboard() {
             value={`${summary.cycling.totalMinutes} min`}
             subtitle={`${pct(summary.cycling.sessionsCompleted, summary.cycling.sessionsPlanned)} done`}
             color="blue"
+          />
+        </Link>
+        <Link href="/bodyweight">
+          <StatCard
+            title="Weight"
+            value={latestWeight ? `${latestWeight.weight} kg` : '--'}
+            subtitle={latestWeight ? latestWeight.date : 'No data'}
+            color="purple"
           />
         </Link>
       </div>
