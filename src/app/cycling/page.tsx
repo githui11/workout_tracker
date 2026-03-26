@@ -107,8 +107,7 @@ export default function CyclingPage() {
     setSaving(false);
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-zinc-500">Loading...</div>;
-
+  // Memoized derived data — must be before early returns to satisfy React hooks rules
   const completedSessions = useMemo(() => sessions.filter((s) => s.actualDuration !== null), [sessions]);
   const durationData = useMemo(() => completedSessions.map((s) => ({
     label: s.date.slice(5),
@@ -121,10 +120,10 @@ export default function CyclingPage() {
       label: s.date.slice(5),
       rpe: s.rpe,
     })), [completedSessions]);
-
-  // Goal tracking: 180 min target
   const maxDuration = useMemo(() => completedSessions.reduce((max, s) => Math.max(max, s.actualDuration || 0), 0), [completedSessions]);
   const goalProgress = useMemo(() => Math.min(100, Math.round((maxDuration / 180) * 100)), [maxDuration]);
+
+  if (loading) return <div className="flex items-center justify-center h-64 text-zinc-500">Loading...</div>;
 
   return (
     <div className="space-y-6">

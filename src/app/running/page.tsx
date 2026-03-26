@@ -108,9 +108,7 @@ export default function RunningPage() {
     setSaving(false);
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-zinc-500">Loading...</div>;
-
-  // Chart data (memoized to avoid recalculation on every render)
+  // Chart data (memoized — must be before early returns to satisfy React hooks rules)
   const completedSessions = useMemo(() => sessions.filter((s) => s.actualDistance !== null), [sessions]);
   const distanceData = useMemo(() => completedSessions.map((s) => ({
     label: s.date.slice(5),
@@ -123,6 +121,8 @@ export default function RunningPage() {
       label: s.date.slice(5),
       elevation: s.elevationGain,
     })), [completedSessions]);
+
+  if (loading) return <div className="flex items-center justify-center h-64 text-zinc-500">Loading...</div>;
 
   return (
     <div className="space-y-6">
