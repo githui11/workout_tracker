@@ -81,7 +81,7 @@ export default function Dashboard() {
           <StatCard
             title="Weight"
             value={latestWeight ? `${latestWeight.weight} kg` : '--'}
-            subtitle={latestWeight ? latestWeight.date : 'No data'}
+            subtitle={latestWeight ? latestWeight.date.split('T')[0] : 'No data'}
             color="purple"
           />
         </Link>

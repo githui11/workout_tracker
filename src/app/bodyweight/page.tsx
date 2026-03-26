@@ -31,7 +31,7 @@ export default function BodyWeightPage() {
       .then((r) => r.json())
       .then((data: BodyWeightEntry[]) => {
         setEntries(data);
-        const todayEntry = data.find((e) => e.date === today);
+        const todayEntry = data.find((e) => e.date.split('T')[0] === today);
         if (todayEntry) {
           setForm({ date: today, weight: todayEntry.weight.toString(), notes: todayEntry.notes || '' });
         }
@@ -63,7 +63,7 @@ export default function BodyWeightPage() {
   }
 
   const chartData = useMemo(() => entries.map((e) => ({
-    label: e.date.slice(5),
+    label: e.date.split('T')[0].slice(5),
     weight: Number(e.weight),
   })), [entries]);
 
@@ -169,7 +169,7 @@ export default function BodyWeightPage() {
             .reverse()
             .map((e) => (
               <div key={e.date} className="bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-4 flex justify-between items-center border border-zinc-800/40">
-                <span className="text-sm font-semibold">{e.date}</span>
+                <span className="text-sm font-semibold">{e.date.split('T')[0]}</span>
                 <div className="text-right">
                   <span className="text-purple-400 font-bold">{e.weight} kg</span>
                   {e.notes && <p className="text-xs text-zinc-500 mt-0.5">{e.notes}</p>}
