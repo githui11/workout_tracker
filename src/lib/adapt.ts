@@ -1,5 +1,5 @@
 import type { NeonQueryFunction } from '@neondatabase/serverless';
-import { RunningSession, CyclingSession, WeightsSection, Adaptation } from './types';
+import { RunningSession, CyclingSession, Adaptation } from './types';
 import { getCurrentWeek } from './aggregations';
 
 /**
@@ -9,16 +9,13 @@ import { getCurrentWeek } from './aggregations';
 export function generateAdaptations(
   running: RunningSession[],
   cycling: CyclingSession[],
-  weights: WeightsSection[],
   currentWeek: number
 ): Adaptation[] {
   const adaptations: Adaptation[] = [];
 
   adaptations.push(...analyzeRunning(running, currentWeek));
   adaptations.push(...analyzeCycling(cycling, currentWeek));
-  adaptations.push(...analyzeWeights(weights, currentWeek));
 
-  // If no issues found, add an "on track" message
   if (adaptations.length === 0) {
     adaptations.push({
       type: 'on_track',
@@ -35,12 +32,10 @@ function analyzeRunning(sessions: RunningSession[], currentWeek: number): Adapta
   const adaptations: Adaptation[] = [];
   const recentWeeks = [currentWeek - 1, currentWeek - 2].filter((w) => w > 0);
 
-  // Check "How Legs Feel" — look for pattern of soreness
   const recentCompleted = sessions.filter(
     (s) => recentWeeks.includes(s.week) && s.actualDistance !== null
   );
 
-  // Parse leg feel as number (1-5 scale, or text)
   const legFeelScores = recentCompleted
     .map((s) => {
       const n = parseInt(s.howLegsFeel);
@@ -67,7 +62,6 @@ function analyzeRunning(sessions: RunningSession[], currentWeek: number): Adapta
     }
   }
 
-  // Check if pace is consistently slower than target
   const paceComparisons = recentCompleted.map((s) => {
     const target = parsePaceRange(s.targetPace);
     const actual = parseSinglePace(s.actualPace);
@@ -97,7 +91,6 @@ function analyzeRunning(sessions: RunningSession[], currentWeek: number): Adapta
     }
   }
 
-  // Check for missed sessions
   const lastWeekSessions = sessions.filter((s) => s.week === currentWeek - 1);
   const lastWeekCompleted = lastWeekSessions.filter((s) => s.actualDistance !== null);
   if (lastWeekSessions.length >= 3 && lastWeekCompleted.length < 2) {
@@ -117,24 +110,29 @@ function analyzeCycling(sessions: CyclingSession[], currentWeek: number): Adapta
   const recentWeeks = [currentWeek - 1, currentWeek - 2].filter((w) => w > 0);
 
   const recentCompleted = sessions.filter(
-    (s) => recentWeeks.includes(s.week) && s.rpe !== null
+    (s) => recentWeeks.includes(s.week) && s.actualDuration !== null
   );
 
-  if (recentCompleted.length >= 2) {
-    const avgRpe = recentCompleted.reduce((sum, s) => sum + (s.rpe || 0), 0) / recentCompleted.length;
+  // Check for missed sessions
+  const lastWeekSessions = sessions.filter((s) => s.week === currentWeek - 1);
+  const lastWeekCompleted = lastWeekSessions.filter((s) => s.actualDuration !== null);
+  if (lastWeekSessions.length >= 2 && lastWeekCompleted.length < 1) {
+    adaptations.push({
+      type: 'hold_progress',
+      category: 'cycling',
+      message: `Only ${lastWeekCompleted.length}/${lastWeekSessions.length} cycling sessions completed last week. Holding targets.`,
+      severity: 'info',
+    });
+  }
 
-    if (avgRpe >= 8) {
-      adaptations.push({
-        type: 'reduce_volume',
-        category: 'cycling',
-        message: `Cycling RPE averaging ${avgRpe.toFixed(1)} — that's very hard. Reducing target duration by 10%.`,
-        severity: 'warning',
-      });
-    } else if (avgRpe <= 4) {
+  // Check if consistently exceeding targets
+  if (recentCompleted.length >= 2) {
+    const allOverTarget = recentCompleted.every((s) => (s.actualDuration || 0) > s.targetDuration * 1.15);
+    if (allOverTarget) {
       adaptations.push({
         type: 'increase_volume',
         category: 'cycling',
-        message: `Cycling RPE averaging ${avgRpe.toFixed(1)} — you can push harder. Adding 10 minutes to targets.`,
+        message: 'You\'re consistently exceeding duration targets. Adding 10 minutes to next target.',
         severity: 'success',
       });
     }
@@ -143,67 +141,8 @@ function analyzeCycling(sessions: CyclingSession[], currentWeek: number): Adapta
   return adaptations;
 }
 
-function analyzeWeights(sections: WeightsSection[], currentWeek: number): Adaptation[] {
-  const adaptations: Adaptation[] = [];
-
-  for (const section of sections) {
-    for (const exerciseName of section.exerciseNames) {
-      // Get last 3 weeks of total reps for this exercise
-      const recentSessions = section.sessions
-        .filter((s) => s.week >= currentWeek - 3 && s.week < currentWeek)
-        .sort((a, b) => a.week - b.week);
-
-      const totals = recentSessions
-        .map((s) => s.exercises[exerciseName]?.total)
-        .filter((t): t is number => t !== null);
-
-      if (totals.length < 2) continue;
-
-      // Check for progressive overload (reps going up)
-      const increasing = totals.length >= 2 && totals.every((t, i) => i === 0 || t > totals[i - 1]);
-      if (increasing) {
-        adaptations.push({
-          type: 'increase_weight',
-          category: 'weights',
-          exercise: exerciseName,
-          message: `${exerciseName}: total reps up ${totals.length} weeks in a row (${totals.join(' → ')}). Time to increase weight!`,
-          severity: 'success',
-        });
-      }
-
-      // Check for plateau or decline (3+ weeks flat/down)
-      if (totals.length >= 3) {
-        const declining = totals.every((t, i) => i === 0 || t <= totals[i - 1]);
-        if (declining) {
-          adaptations.push({
-            type: 'deload',
-            category: 'weights',
-            exercise: exerciseName,
-            message: `${exerciseName}: reps flat/declining for ${totals.length} weeks (${totals.join(' → ')}). Consider a deload.`,
-            severity: 'warning',
-          });
-        }
-      }
-    }
-  }
-
-  // Check for overreaching (multiple exercises declining)
-  const warningCount = adaptations.filter((a) => a.type === 'deload').length;
-  if (warningCount >= 3) {
-    adaptations.push({
-      type: 'deload',
-      category: 'weights',
-      message: `Multiple exercises declining — your body may need a full deload week. Reduce volume across the board.`,
-      severity: 'warning',
-    });
-  }
-
-  return adaptations;
-}
-
 // Helpers
 function parsePaceRange(pace: string): number | null {
-  // Parse "6:30 - 6:45" -> midpoint in minutes
   const matches = pace.match(/(\d+):(\d+)/g);
   if (!matches || matches.length === 0) return null;
   const parsed = matches.map((m) => {
@@ -226,19 +165,15 @@ function parseSinglePace(pace: string | null): number | null {
  */
 export async function applyAdaptations(
   sql: NeonQueryFunction<false, false>,
-  category: 'running' | 'cycling' | 'weights',
+  category: 'running' | 'cycling',
   savedDate: string,
-  sectionKey?: string
 ): Promise<Adaptation[]> {
   const currentWeek = getCurrentWeek();
-  // Only fetch recent weeks needed for adaptation analysis
   const minWeek = Math.max(1, currentWeek - 3);
 
-  const [runningRows, cyclingRows, sectionRows, weightSessionRows] = await Promise.all([
+  const [runningRows, cyclingRows] = await Promise.all([
     sql`SELECT * FROM running_sessions WHERE week >= ${minWeek} ORDER BY date ASC`,
     sql`SELECT * FROM cycling_sessions WHERE week >= ${minWeek} ORDER BY date ASC`,
-    sql`SELECT * FROM weights_sections ORDER BY id ASC`,
-    sql`SELECT * FROM weights_sessions WHERE week >= ${minWeek} ORDER BY date ASC`,
   ]);
 
   const running: RunningSession[] = runningRows.map((r) => ({
@@ -257,33 +192,10 @@ export async function applyAdaptations(
     week: r.week,
     date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date).split('T')[0],
     day: r.day, time: r.time, targetDuration: r.target_duration,
-    actualDuration: r.actual_duration, movingTime: r.moving_time,
-    resistanceLevel: r.resistance_level || '', avgHeartRate: r.avg_heart_rate,
-    avgSpeed: r.avg_speed !== null ? Number(r.avg_speed) : null,
-    elevationGain: r.elevation_gain, maxElevation: r.max_elevation,
-    calories: r.calories, rpe: r.rpe, notes: r.notes || '',
+    actualDuration: r.actual_duration, notes: r.notes || '',
   }));
 
-  // Group weight sessions by section_key (eliminates N+1)
-  const sessionsBySection = new Map<string, typeof weightSessionRows>();
-  for (const s of weightSessionRows) {
-    const key = s.section_key as string;
-    if (!sessionsBySection.has(key)) sessionsBySection.set(key, []);
-    sessionsBySection.get(key)!.push(s);
-  }
-
-  const weights: WeightsSection[] = sectionRows.map((section) => ({
-    sectionKey: section.section_key, title: section.title,
-    dayOfWeek: section.day_of_week, location: section.location,
-    exerciseNames: (section.exercises as { name: string }[]).map((e) => e.name),
-    sessions: (sessionsBySection.get(section.section_key as string) || []).map((s) => ({
-      week: s.week,
-      date: s.date instanceof Date ? s.date.toISOString().split('T')[0] : String(s.date).split('T')[0],
-      exercises: s.exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>,
-    })),
-  }));
-
-  const allAdaptations = generateAdaptations(running, cycling, weights, currentWeek);
+  const allAdaptations = generateAdaptations(running, cycling, currentWeek);
   const relevant = allAdaptations.filter((a) => a.category === category);
   const applied: Adaptation[] = [];
 
@@ -337,46 +249,6 @@ export async function applyAdaptations(
         } else {
           applied.push({ ...a, applied: false });
         }
-      }
-    }
-  }
-
-  if (category === 'weights' && sectionKey) {
-    const nextRow = await sql`
-      SELECT id, exercises FROM weights_sessions
-      WHERE section_key = ${sectionKey} AND date > ${savedDate}
-      ORDER BY date ASC LIMIT 1
-    `;
-    if (nextRow.length > 0) {
-      const nextId = nextRow[0].id;
-      const nextExercises = nextRow[0].exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>;
-      let modified = false;
-      for (const a of relevant) {
-        if (a.type === 'increase_weight' && a.exercise && nextExercises[a.exercise]) {
-          const ex = nextExercises[a.exercise];
-          const w = parseFloat(ex.weight);
-          if (!isNaN(w)) {
-            ex.weight = String(w + 2.5);
-            modified = true;
-            applied.push({ ...a, applied: true, adjustedValue: `${ex.weight} kg` });
-          } else {
-            applied.push({ ...a, applied: false });
-          }
-        } else if (a.type === 'deload' && a.exercise && nextExercises[a.exercise]) {
-          const ex = nextExercises[a.exercise];
-          if (ex.sets.length > 3) {
-            ex.sets = ex.sets.slice(0, 3);
-            modified = true;
-            applied.push({ ...a, applied: true, adjustedValue: '3 sets' });
-          } else {
-            applied.push({ ...a, applied: false });
-          }
-        } else {
-          applied.push({ ...a, applied: false });
-        }
-      }
-      if (modified) {
-        await sql`UPDATE weights_sessions SET exercises = ${JSON.stringify(nextExercises)} WHERE id = ${nextId}`;
       }
     }
   }

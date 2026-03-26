@@ -43,7 +43,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Link href="/running">
           <StatCard
             title="Running"
@@ -58,14 +58,6 @@ export default function Dashboard() {
             value={`${summary.cycling.totalMinutes} min`}
             subtitle={`${pct(summary.cycling.sessionsCompleted, summary.cycling.sessionsPlanned)} done`}
             color="blue"
-          />
-        </Link>
-        <Link href="/weights">
-          <StatCard
-            title="Weights"
-            value={`${summary.weights.totalReps}`}
-            subtitle={`${pct(summary.weights.sessionsCompleted, summary.weights.sessionsPlanned)} done`}
-            color="orange"
           />
         </Link>
       </div>
@@ -87,10 +79,6 @@ export default function Dashboard() {
             <span className="text-zinc-400">Cycling</span>
             <span>{summary.cycling.sessionsCompleted}/{summary.cycling.sessionsPlanned} sessions &middot; {summary.cycling.totalMinutes} min</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-zinc-400">Weights</span>
-            <span>{summary.weights.sessionsCompleted}/{summary.weights.sessionsPlanned} sessions &middot; {summary.weights.totalReps} reps</span>
-          </div>
         </div>
       </div>
 
@@ -110,7 +98,6 @@ export default function Dashboard() {
                 }`}
               >
                 <span className="font-medium capitalize">{a.category}</span>
-                {a.exercise && <span className="text-zinc-400"> &middot; {a.exercise}</span>}
                 <p className="mt-1 text-zinc-300">{a.message}</p>
               </div>
             ))}

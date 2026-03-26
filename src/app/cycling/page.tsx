@@ -40,27 +40,11 @@ export default function CyclingPage() {
     time: 'Ad-hoc',
     targetDuration: 0,
     actualDuration: null,
-    movingTime: null,
-    resistanceLevel: '',
-    avgHeartRate: null,
-    avgSpeed: null,
-    elevationGain: null,
-    maxElevation: null,
-    calories: null,
-    rpe: null,
     notes: '',
   } as CyclingSession;
 
   const [form, setForm] = useState({
     actualDuration: '',
-    movingTime: '',
-    resistanceLevel: '',
-    avgHeartRate: '',
-    avgSpeed: '',
-    elevationGain: '',
-    maxElevation: '',
-    calories: '',
-    rpe: '',
     notes: '',
   });
 
@@ -68,14 +52,6 @@ export default function CyclingPage() {
     if (currentSession && currentSession.actualDuration !== null) {
       setForm({
         actualDuration: currentSession.actualDuration?.toString() || '',
-        movingTime: currentSession.movingTime || '',
-        resistanceLevel: currentSession.resistanceLevel || '',
-        avgHeartRate: currentSession.avgHeartRate?.toString() || '',
-        avgSpeed: currentSession.avgSpeed?.toString() || '',
-        elevationGain: currentSession.elevationGain?.toString() || '',
-        maxElevation: currentSession.maxElevation?.toString() || '',
-        calories: currentSession.calories?.toString() || '',
-        rpe: currentSession.rpe?.toString() || '',
         notes: currentSession.notes || '',
       });
     }
@@ -114,12 +90,6 @@ export default function CyclingPage() {
     actual: s.actualDuration,
     target: s.targetDuration,
   })), [completedSessions]);
-  const rpeData = useMemo(() => completedSessions
-    .filter((s) => s.rpe !== null)
-    .map((s) => ({
-      label: s.date.slice(5),
-      rpe: s.rpe,
-    })), [completedSessions]);
   const maxDuration = useMemo(() => completedSessions.reduce((max, s) => Math.max(max, s.actualDuration || 0), 0), [completedSessions]);
   const goalProgress = useMemo(() => Math.min(100, Math.round((maxDuration / 180) * 100)), [maxDuration]);
 
@@ -175,38 +145,26 @@ export default function CyclingPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="Duration (min)" value={form.actualDuration} onChange={(v) => setForm({ ...form, actualDuration: v })} type="number" />
-                <Input label="Moving Time" value={form.movingTime} onChange={(v) => setForm({ ...form, movingTime: v })} placeholder="55:00" />
-                <Input label="Resistance" value={form.resistanceLevel} onChange={(v) => setForm({ ...form, resistanceLevel: v })} />
-                <Input label="Avg HR (bpm)" value={form.avgHeartRate} onChange={(v) => setForm({ ...form, avgHeartRate: v })} type="number" />
-                <Input label="Avg Speed (km/h)" value={form.avgSpeed} onChange={(v) => setForm({ ...form, avgSpeed: v })} type="number" step="0.1" />
-                <Input label="Elev. Gain (m)" value={form.elevationGain} onChange={(v) => setForm({ ...form, elevationGain: v })} type="number" />
-                <Input label="Max Elev. (m)" value={form.maxElevation} onChange={(v) => setForm({ ...form, maxElevation: v })} type="number" />
-                <Input label="Calories" value={form.calories} onChange={(v) => setForm({ ...form, calories: v })} type="number" />
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Duration (min)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={form.actualDuration}
+                  onChange={(e) => setForm({ ...form, actualDuration: e.target.value })}
+                  className="w-full bg-zinc-800 rounded-lg px-3 py-2.5 text-sm border border-zinc-700 focus:border-blue-500 focus:outline-none"
+                />
               </div>
 
               <div>
-                <label className="block text-xs text-zinc-400 mb-1">RPE (1-10)</label>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => setForm({ ...form, rpe: n.toString() })}
-                      className={`flex-1 py-2 text-xs rounded-lg border transition-colors ${
-                        form.rpe === n.toString()
-                          ? 'bg-blue-600 border-blue-500 text-white'
-                          : 'bg-zinc-800 border-zinc-700 text-zinc-400'
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
+                <label className="block text-xs text-zinc-400 mb-1">Notes</label>
+                <input
+                  type="text"
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  className="w-full bg-zinc-800 rounded-lg px-3 py-2.5 text-sm border border-zinc-700 focus:border-blue-500 focus:outline-none"
+                />
               </div>
-
-              <Input label="Notes" value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} />
 
               <button
                 type="submit"
@@ -249,12 +207,7 @@ export default function CyclingPage() {
                   <span className="font-medium">{s.date}</span>
                   <span className="text-blue-400">{s.actualDuration} min</span>
                 </div>
-                <div className="flex gap-4 text-xs text-zinc-400">
-                  {s.rpe && <span>RPE {s.rpe}/10</span>}
-                  {s.avgHeartRate && <span>{s.avgHeartRate} bpm</span>}
-                  {s.calories && <span>{s.calories} cal</span>}
-                  {s.elevationGain && <span>+{s.elevationGain}m</span>}
-                </div>
+                {s.notes && <p className="text-xs text-zinc-500">{s.notes}</p>}
               </div>
             ))}
           {completedSessions.length === 0 && (
@@ -276,40 +229,8 @@ export default function CyclingPage() {
               yAxisLabel="min"
             />
           </div>
-          {rpeData.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-zinc-400 mb-2">RPE Trend</h3>
-              <ProgressChart
-                data={rpeData}
-                lines={[{ key: 'rpe', color: '#f59e0b', name: 'RPE' }]}
-                yAxisLabel="RPE"
-              />
-            </div>
-          )}
         </div>
       )}
-    </div>
-  );
-}
-
-function Input({
-  label, value, onChange, type = 'text', placeholder, step,
-}: {
-  label: string; value: string; onChange: (v: string) => void;
-  type?: string; placeholder?: string; step?: string;
-}) {
-  return (
-    <div>
-      <label className="block text-xs text-zinc-400 mb-1">{label}</label>
-      <input
-        type={type}
-        inputMode={type === 'number' ? 'decimal' : undefined}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full bg-zinc-800 rounded-lg px-3 py-2.5 text-sm border border-zinc-700 focus:border-blue-500 focus:outline-none"
-      />
     </div>
   );
 }

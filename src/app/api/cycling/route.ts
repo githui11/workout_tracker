@@ -18,19 +18,11 @@ export async function POST(request: Request) {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     const body = await request.json();
-    const { date, actualDuration, movingTime, resistanceLevel, avgHeartRate, avgSpeed, elevationGain, maxElevation, calories, rpe, notes } = body;
+    const { date, actualDuration, notes } = body;
 
     const result = await sql`
       UPDATE cycling_sessions SET
         actual_duration = ${actualDuration || null},
-        moving_time = ${movingTime || null},
-        resistance_level = ${resistanceLevel || null},
-        avg_heart_rate = ${avgHeartRate || null},
-        avg_speed = ${avgSpeed || null},
-        elevation_gain = ${elevationGain || null},
-        max_elevation = ${maxElevation || null},
-        calories = ${calories || null},
-        rpe = ${rpe || null},
         notes = ${notes || null}
       WHERE date = ${date}
       RETURNING id`;
@@ -41,14 +33,10 @@ export async function POST(request: Request) {
       const day = getDayName(date);
       await sql`
         INSERT INTO cycling_sessions
-          (week, date, day, time, target_duration,
-           actual_duration, moving_time, resistance_level, avg_heart_rate, avg_speed,
-           elevation_gain, max_elevation, calories, rpe, notes)
+          (week, date, day, time, target_duration, actual_duration, notes)
         VALUES
           (${week}, ${date}, ${day}, 'Ad-hoc', ${defaults.targetDuration},
-           ${actualDuration || null}, ${movingTime || null}, ${resistanceLevel || null},
-           ${avgHeartRate || null}, ${avgSpeed || null}, ${elevationGain || null},
-           ${maxElevation || null}, ${calories || null}, ${rpe || null}, ${notes || null})`;
+           ${actualDuration || null}, ${notes || null})`;
     }
 
     const adaptations = await applyAdaptations(sql, 'cycling', date);

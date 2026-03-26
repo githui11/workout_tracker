@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Workout Tracker',
-  description: 'Track running, cycling, and weight training progress',
+  description: 'Track running and cycling progress',
 };
 
 export const viewport: Viewport = {
