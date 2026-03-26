@@ -15,9 +15,9 @@ function HomeIcon({ active }: { active: boolean }) {
 function RunIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-      {/* Sneaker / running shoe */}
-      <path d="M4 17h14a3 3 0 003-3l-2-4h-5l-1.5 2H8L6 9H3v5l1 3z" />
-      <line x1="4" y1="19" x2="18" y2="19" />
+      {/* Activity pulse / heartbeat */}
+      <polyline points="3 12 6 12 8 5 11 19 13.5 12 16 12" />
+      <circle cx="19" cy="12" r="1.5" />
     </svg>
   );
 }
@@ -36,10 +36,11 @@ function CycleIcon({ active }: { active: boolean }) {
 function WeightIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-      {/* Bathroom scale icon */}
-      <rect x="3" y="6" width="18" height="14" rx="3" />
-      <circle cx="12" cy="13" r="4" />
-      <line x1="12" y1="11" x2="14" y2="12" />
+      {/* Bathroom scale — rounded top with dial gauge */}
+      <ellipse cx="12" cy="16" rx="9" ry="5" />
+      <path d="M5 12a9 5 0 0114 0" />
+      <circle cx="12" cy="12" r="3" />
+      <line x1="12" y1="10.5" x2="13.5" y2="11.5" />
     </svg>
   );
 }
