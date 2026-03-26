@@ -7,7 +7,7 @@ import { applyAdaptations } from '@/lib/adapt';
 function mapRow(r: Record<string, any>) {
   return {
     week: r.week,
-    date: r.date,
+    date: typeof r.date === 'string' ? r.date.split('T')[0] : r.date,
     day: r.day,
     time: r.time,
     phase: r.phase,
