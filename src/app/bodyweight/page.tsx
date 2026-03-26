@@ -6,7 +6,12 @@ import dynamic from 'next/dynamic';
 
 const ProgressChart = dynamic(() => import('@/components/progress-chart'), {
   ssr: false,
-  loading: () => <div className="flex items-center justify-center h-40 text-zinc-500 text-sm">Loading chart...</div>,
+  loading: () => (
+    <div className="flex items-center justify-center h-40 gap-2">
+      <div className="w-5 h-5 border-2 border-zinc-700 border-t-purple-400 rounded-full animate-spin" />
+      <span className="text-zinc-500 text-sm">Loading chart...</span>
+    </div>
+  ),
 });
 
 type Tab = 'log' | 'history' | 'charts';
@@ -26,7 +31,6 @@ export default function BodyWeightPage() {
       .then((r) => r.json())
       .then((data: BodyWeightEntry[]) => {
         setEntries(data);
-        // Pre-fill if there's an entry for today
         const todayEntry = data.find((e) => e.date === today);
         if (todayEntry) {
           setForm({ date: today, weight: todayEntry.weight.toString(), notes: todayEntry.notes || '' });
@@ -67,22 +71,29 @@ export default function BodyWeightPage() {
   const earliest = entries.length > 0 ? entries[0] : null;
   const change = latest && earliest ? (Number(latest.weight) - Number(earliest.weight)).toFixed(1) : null;
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-zinc-500">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <div className="w-8 h-8 border-2 border-zinc-700 border-t-purple-400 rounded-full animate-spin" />
+        <span className="text-sm text-zinc-500">Loading data...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Body Weight</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Body Weight</h1>
         {latest && (
-          <div className="mt-2 bg-zinc-900 rounded-lg p-3">
-            <div className="flex justify-between text-sm">
+          <div className="mt-3 bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-4 border border-zinc-800/40">
+            <div className="flex justify-between items-center text-sm">
               <span className="text-zinc-400">Current</span>
-              <span className="font-bold text-purple-400">{latest.weight} kg</span>
+              <span className="font-bold text-lg text-purple-400">{latest.weight} kg</span>
             </div>
             {change && entries.length > 1 && (
-              <div className="flex justify-between text-sm mt-1">
+              <div className="flex justify-between items-center text-sm mt-2">
                 <span className="text-zinc-400">Change</span>
-                <span className={Number(change) < 0 ? 'text-green-400' : Number(change) > 0 ? 'text-yellow-400' : 'text-zinc-400'}>
+                <span className={`font-semibold ${Number(change) < 0 ? 'text-green-400' : Number(change) > 0 ? 'text-amber-400' : 'text-zinc-400'}`}>
                   {Number(change) > 0 ? '+' : ''}{change} kg
                 </span>
               </div>
@@ -91,13 +102,15 @@ export default function BodyWeightPage() {
         )}
       </div>
 
-      <div className="flex gap-1 bg-zinc-900 rounded-lg p-1">
+      <div className="flex gap-1 bg-zinc-900/60 backdrop-blur-sm rounded-xl p-1 border border-zinc-800/40">
         {(['log', 'history', 'charts'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 py-2 text-sm rounded-md capitalize transition-colors ${
-              tab === t ? 'bg-zinc-700 text-white' : 'text-zinc-500'
+            className={`flex-1 py-2 text-sm rounded-lg capitalize transition-all duration-200 font-medium ${
+              tab === t
+                ? 'bg-purple-500/15 text-purple-400 shadow-sm'
+                : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
             {t}
@@ -108,16 +121,16 @@ export default function BodyWeightPage() {
       {tab === 'log' && (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Date</label>
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">Date</label>
             <input
               type="date"
               value={form.date}
               onChange={(e) => setForm({ ...form, date: e.target.value })}
-              className="w-full bg-zinc-800 rounded-lg px-3 py-2.5 text-sm border border-zinc-700 focus:border-purple-500 focus:outline-none"
+              className="w-full bg-zinc-900 rounded-xl px-3 py-2.5 text-sm border border-zinc-800 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/10 focus:outline-none transition-all"
             />
           </div>
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Weight (kg)</label>
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">Weight (kg)</label>
             <input
               type="number"
               inputMode="decimal"
@@ -125,27 +138,27 @@ export default function BodyWeightPage() {
               value={form.weight}
               onChange={(e) => setForm({ ...form, weight: e.target.value })}
               placeholder="70.0"
-              className="w-full bg-zinc-800 rounded-lg px-3 py-2.5 text-sm border border-zinc-700 focus:border-purple-500 focus:outline-none"
+              className="w-full bg-zinc-900 rounded-xl px-3 py-2.5 text-sm border border-zinc-800 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/10 focus:outline-none transition-all"
             />
           </div>
           <div>
-            <label className="block text-xs text-zinc-400 mb-1">Notes</label>
+            <label className="block text-xs font-medium text-zinc-400 mb-1.5">Notes</label>
             <input
               type="text"
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               placeholder="Morning, fasted, etc."
-              className="w-full bg-zinc-800 rounded-lg px-3 py-2.5 text-sm border border-zinc-700 focus:border-purple-500 focus:outline-none"
+              className="w-full bg-zinc-900 rounded-xl px-3 py-2.5 text-sm border border-zinc-800 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/10 focus:outline-none transition-all"
             />
           </div>
           <button
             type="submit"
             disabled={saving || !form.weight}
-            className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-3 rounded-xl font-medium transition-colors"
+            className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:opacity-50 disabled:hover:from-purple-600 disabled:hover:to-purple-500 text-white py-3 rounded-xl font-semibold transition-all active:scale-[0.98] shadow-lg shadow-purple-500/10"
           >
             {saving ? 'Saving...' : 'Save Weight'}
           </button>
-          {toast && <p className={`text-center text-sm ${toast === 'Saved!' ? 'text-green-400' : 'text-red-400'}`}>{toast}</p>}
+          {toast && <p className={`text-center text-sm font-medium ${toast === 'Saved!' ? 'text-green-400' : 'text-red-400'}`}>{toast}</p>}
         </form>
       )}
 
@@ -155,23 +168,23 @@ export default function BodyWeightPage() {
             .slice()
             .reverse()
             .map((e) => (
-              <div key={e.date} className="bg-zinc-900 rounded-xl p-3 flex justify-between items-center">
-                <span className="text-sm font-medium">{e.date}</span>
+              <div key={e.date} className="bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-4 flex justify-between items-center border border-zinc-800/40">
+                <span className="text-sm font-semibold">{e.date}</span>
                 <div className="text-right">
                   <span className="text-purple-400 font-bold">{e.weight} kg</span>
-                  {e.notes && <p className="text-xs text-zinc-500">{e.notes}</p>}
+                  {e.notes && <p className="text-xs text-zinc-500 mt-0.5">{e.notes}</p>}
                 </div>
               </div>
             ))}
           {entries.length === 0 && (
-            <p className="text-zinc-500 text-center py-8">No entries yet — start logging your weight</p>
+            <p className="text-zinc-500 text-center py-12 text-sm">No entries yet — start logging your weight</p>
           )}
         </div>
       )}
 
       {tab === 'charts' && (
         <div>
-          <h3 className="text-sm font-semibold text-zinc-400 mb-2">Weight Trend (kg)</h3>
+          <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Weight Trend (kg)</h3>
           <ProgressChart
             data={chartData}
             lines={[{ key: 'weight', color: '#a855f7', name: 'Weight' }]}

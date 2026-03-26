@@ -29,21 +29,33 @@ export default function Dashboard() {
   }, []);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64 text-zinc-500">Loading...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <div className="w-8 h-8 border-2 border-zinc-700 border-t-blue-400 rounded-full animate-spin" />
+        <span className="text-sm text-zinc-500">Loading dashboard...</span>
+      </div>
+    );
   }
 
   if (!summary) {
-    return <div className="text-red-400">Failed to load data</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-400 font-medium">Failed to load data</p>
+          <p className="text-zinc-500 text-sm mt-1">Check your connection and refresh</p>
+        </div>
+      </div>
+    );
   }
 
   const pct = (done: number, total: number) =>
     total > 0 ? `${Math.round((done / total) * 100)}%` : '--';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Workout Tracker</h1>
-        <p className="text-zinc-400 text-sm mt-1">
+        <h1 className="text-2xl font-bold tracking-tight">Workout Tracker</h1>
+        <p className="text-zinc-500 text-sm mt-1">
           Week {summary.week} &middot; {summary.dateRange}
         </p>
       </div>
@@ -76,42 +88,43 @@ export default function Dashboard() {
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide">This Week</h2>
-        <div className="bg-zinc-900 rounded-xl p-4 space-y-3">
-          <div className="flex justify-between text-sm">
+        <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">This Week</h2>
+        <div className="bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-4 space-y-3 border border-zinc-800/50">
+          <div className="flex justify-between items-center text-sm">
             <span className="text-zinc-400">Running</span>
-            <span>{summary.running.sessionsCompleted}/{summary.running.sessionsPlanned} sessions &middot; {summary.running.totalKm} km</span>
+            <span className="font-medium">{summary.running.sessionsCompleted}/{summary.running.sessionsPlanned} sessions &middot; {summary.running.totalKm} km</span>
           </div>
           {summary.running.avgPace && (
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between items-center text-sm">
               <span className="text-zinc-400">Avg pace</span>
-              <span>{summary.running.avgPace} /km</span>
+              <span className="font-medium text-green-400">{summary.running.avgPace} /km</span>
             </div>
           )}
-          <div className="flex justify-between text-sm">
+          <div className="h-px bg-zinc-800/60" />
+          <div className="flex justify-between items-center text-sm">
             <span className="text-zinc-400">Cycling</span>
-            <span>{summary.cycling.sessionsCompleted}/{summary.cycling.sessionsPlanned} sessions &middot; {summary.cycling.totalMinutes} min</span>
+            <span className="font-medium">{summary.cycling.sessionsCompleted}/{summary.cycling.sessionsPlanned} sessions &middot; {summary.cycling.totalMinutes} min</span>
           </div>
         </div>
       </div>
 
       {adaptations.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wide">Recommendations</h2>
+          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Recommendations</h2>
           <div className="space-y-2">
             {adaptations.map((a, i) => (
               <div
                 key={i}
-                className={`rounded-xl p-3 text-sm border ${
+                className={`rounded-2xl p-4 text-sm border backdrop-blur-sm ${
                   a.severity === 'warning'
-                    ? 'bg-yellow-500/5 border-yellow-500/30 text-yellow-200'
+                    ? 'bg-amber-500/5 border-amber-500/20 text-amber-200'
                     : a.severity === 'success'
-                    ? 'bg-green-500/5 border-green-500/30 text-green-200'
-                    : 'bg-blue-500/5 border-blue-500/30 text-blue-200'
+                    ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-200'
+                    : 'bg-blue-500/5 border-blue-500/20 text-blue-200'
                 }`}
               >
-                <span className="font-medium capitalize">{a.category}</span>
-                <p className="mt-1 text-zinc-300">{a.message}</p>
+                <span className="font-semibold capitalize">{a.category}</span>
+                <p className="mt-1 text-zinc-300 leading-relaxed">{a.message}</p>
               </div>
             ))}
           </div>
