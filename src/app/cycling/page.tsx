@@ -31,10 +31,12 @@ export default function CyclingPage() {
 
   const today = new Date().toISOString().split('T')[0];
   const todayDow = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-  const todaySession = sessions.find((s) => s.date === today);
-  const nextSession = sessions.find((s) => s.date >= today && s.actualDuration === null);
-  const plannedSession = todaySession || nextSession;
+  // Find earliest unlogged session — skipped sessions get served next
+  const earliestUnlogged = sessions.find((s) => s.actualDuration === null);
+  const todaySession = sessions.find((s) => s.date === today && s.actualDuration !== null);
+  const plannedSession = todaySession || earliestUnlogged;
   const isAdHoc = !plannedSession;
+  const isCarryOver = plannedSession && plannedSession.date < today && plannedSession.actualDuration === null;
   const currentSession = plannedSession || {
     date: today,
     day: todayDow,
@@ -156,9 +158,14 @@ export default function CyclingPage() {
                   Ad-hoc session
                 </div>
               )}
+              {isCarryOver && (
+                <div className="text-xs font-semibold text-blue-400 bg-blue-500/[0.06] rounded-lg px-3 py-1.5 mb-2 text-center border border-blue-500/15">
+                  Carried over from {currentSession.date} ({currentSession.day})
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-500">Date</span>
-                <span className="font-medium">{currentSession.date} ({currentSession.day})</span>
+                <span className="font-medium">{isCarryOver ? `${today} (${todayDow})` : `${currentSession.date} (${currentSession.day})`}</span>
               </div>
               {!isAdHoc && (
                 <div className="flex justify-between text-sm">

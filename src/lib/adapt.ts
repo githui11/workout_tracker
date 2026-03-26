@@ -81,11 +81,15 @@ function analyzeRunning(sessions: RunningSession[], currentWeek: number): Adapta
     }
 
     const allFast = paceComparisons.every((p) => p.actual < p.targetMid * 0.95);
-    if (allFast && legFeelScores.length > 0 && legFeelScores.every((s) => s >= 4)) {
+    // Only progress if: beating pace targets AND legs feel good (4+) AND no missed sessions last week
+    const lastWeekSessionsForPace = sessions.filter((s) => s.week === currentWeek - 1);
+    const lastWeekCompletedForPace = lastWeekSessionsForPace.filter((s) => s.actualDistance !== null);
+    const noMissedLastWeek = lastWeekSessionsForPace.length === 0 || lastWeekCompletedForPace.length >= lastWeekSessionsForPace.length;
+    if (allFast && legFeelScores.length > 0 && legFeelScores.every((s) => s >= 4) && noMissedLastWeek) {
       adaptations.push({
         type: 'increase_volume',
         category: 'running',
-        message: 'You\'re consistently beating pace targets and feeling good. Bumping next week\'s volume by 5%.',
+        message: 'You\'re consistently beating pace targets, feeling good, and completed all sessions. Bumping next week\'s volume by 5%.',
         severity: 'success',
       });
     }
@@ -125,14 +129,15 @@ function analyzeCycling(sessions: CyclingSession[], currentWeek: number): Adapta
     });
   }
 
-  // Check if consistently exceeding targets
+  // Check if consistently exceeding targets — only progress if no missed sessions
   if (recentCompleted.length >= 2) {
     const allOverTarget = recentCompleted.every((s) => (s.actualDuration || 0) > s.targetDuration * 1.15);
-    if (allOverTarget) {
+    const noMissedLastWeek = lastWeekSessions.length === 0 || lastWeekCompleted.length >= lastWeekSessions.length;
+    if (allOverTarget && noMissedLastWeek) {
       adaptations.push({
         type: 'increase_volume',
         category: 'cycling',
-        message: 'You\'re consistently exceeding duration targets. Adding 10 minutes to next target.',
+        message: 'You\'re consistently exceeding duration targets and completed all sessions. Adding 10 minutes to next target.',
         severity: 'success',
       });
     }
@@ -200,9 +205,10 @@ export async function applyAdaptations(
   const applied: Adaptation[] = [];
 
   if (category === 'running') {
+    // Find earliest unlogged session (not date > savedDate) so skipped sessions are served next
     const nextRow = await sql`
       SELECT id, target_distance FROM running_sessions
-      WHERE date > ${savedDate} AND actual_distance IS NULL
+      WHERE actual_distance IS NULL
       ORDER BY date ASC LIMIT 1
     `;
     if (nextRow.length > 0) {
@@ -227,9 +233,10 @@ export async function applyAdaptations(
   }
 
   if (category === 'cycling') {
+    // Find earliest unlogged session so skipped sessions are served next
     const nextRow = await sql`
       SELECT id, target_duration FROM cycling_sessions
-      WHERE date > ${savedDate} AND actual_duration IS NULL
+      WHERE actual_duration IS NULL
       ORDER BY date ASC LIMIT 1
     `;
     if (nextRow.length > 0) {
