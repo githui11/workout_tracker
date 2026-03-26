@@ -10,10 +10,12 @@ export async function GET(request: Request) {
     const weekParam = searchParams.get('week');
     const week = weekParam ? parseInt(weekParam) : getCurrentWeek();
 
-    const [runningRows, cyclingRows, sectionRows] = await Promise.all([
-      sql`SELECT * FROM running_sessions ORDER BY date ASC`,
-      sql`SELECT * FROM cycling_sessions ORDER BY date ASC`,
+    // Only fetch data for the requested week (summary only needs one week)
+    const [runningRows, cyclingRows, sectionRows, weightSessionRows] = await Promise.all([
+      sql`SELECT * FROM running_sessions WHERE week = ${week} ORDER BY date ASC`,
+      sql`SELECT * FROM cycling_sessions WHERE week = ${week} ORDER BY date ASC`,
       sql`SELECT * FROM weights_sections ORDER BY id ASC`,
+      sql`SELECT * FROM weights_sessions WHERE week = ${week} ORDER BY date ASC`,
     ]);
 
     const running: RunningSession[] = runningRows.map((r) => ({
@@ -54,24 +56,26 @@ export async function GET(request: Request) {
       notes: r.notes || '',
     }));
 
-    const weights: WeightsSection[] = [];
-    for (const section of sectionRows) {
-      const sessions = await sql`
-        SELECT * FROM weights_sessions WHERE section_key = ${section.section_key} ORDER BY date ASC
-      `;
-      weights.push({
-        sectionKey: section.section_key,
-        title: section.title,
-        dayOfWeek: section.day_of_week,
-        location: section.location,
-        exerciseNames: (section.exercises as { name: string }[]).map((e) => e.name),
-        sessions: sessions.map((s) => ({
-          week: s.week,
-          date: s.date instanceof Date ? s.date.toISOString().split('T')[0] : String(s.date).split('T')[0],
-          exercises: s.exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>,
-        })),
-      });
+    // Group weight sessions by section_key (eliminates N+1)
+    const sessionsBySection = new Map<string, typeof weightSessionRows>();
+    for (const s of weightSessionRows) {
+      const key = s.section_key as string;
+      if (!sessionsBySection.has(key)) sessionsBySection.set(key, []);
+      sessionsBySection.get(key)!.push(s);
     }
+
+    const weights: WeightsSection[] = sectionRows.map((section) => ({
+      sectionKey: section.section_key,
+      title: section.title,
+      dayOfWeek: section.day_of_week,
+      location: section.location,
+      exerciseNames: (section.exercises as { name: string }[]).map((e) => e.name),
+      sessions: (sessionsBySection.get(section.section_key as string) || []).map((s) => ({
+        week: s.week,
+        date: s.date instanceof Date ? s.date.toISOString().split('T')[0] : String(s.date).split('T')[0],
+        exercises: s.exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>,
+      })),
+    }));
 
     const summary = buildWeeklySummary(running, cycling, weights, week);
     return NextResponse.json(summary);

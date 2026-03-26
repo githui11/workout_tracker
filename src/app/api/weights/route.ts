@@ -7,31 +7,31 @@ export async function GET() {
   try {
     const sql = neon(process.env.DATABASE_URL!);
 
-    const sections = await sql`
-      SELECT * FROM weights_sections ORDER BY id ASC
-    `;
+    const [sections, allSessions] = await Promise.all([
+      sql`SELECT * FROM weights_sections ORDER BY id ASC`,
+      sql`SELECT * FROM weights_sessions ORDER BY date ASC`,
+    ]);
 
-    const result = [];
-    for (const section of sections) {
-      const sessions = await sql`
-        SELECT * FROM weights_sessions
-        WHERE section_key = ${section.section_key}
-        ORDER BY date ASC
-      `;
-
-      result.push({
-        sectionKey: section.section_key,
-        title: section.title,
-        dayOfWeek: section.day_of_week,
-        location: section.location,
-        exerciseNames: (section.exercises as { name: string }[]).map((e) => e.name),
-        sessions: sessions.map((s) => ({
-          week: s.week,
-          date: s.date instanceof Date ? s.date.toISOString().split('T')[0] : String(s.date).split('T')[0],
-          exercises: s.exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>,
-        })),
-      });
+    // Group sessions by section_key in one pass (eliminates N+1 queries)
+    const sessionsBySection = new Map<string, typeof allSessions>();
+    for (const s of allSessions) {
+      const key = s.section_key as string;
+      if (!sessionsBySection.has(key)) sessionsBySection.set(key, []);
+      sessionsBySection.get(key)!.push(s);
     }
+
+    const result = sections.map((section) => ({
+      sectionKey: section.section_key,
+      title: section.title,
+      dayOfWeek: section.day_of_week,
+      location: section.location,
+      exerciseNames: (section.exercises as { name: string }[]).map((e) => e.name),
+      sessions: (sessionsBySection.get(section.section_key as string) || []).map((s) => ({
+        week: s.week,
+        date: s.date instanceof Date ? s.date.toISOString().split('T')[0] : String(s.date).split('T')[0],
+        exercises: s.exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>,
+      })),
+    }));
 
     return NextResponse.json(result);
   } catch (error) {

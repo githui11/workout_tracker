@@ -1,8 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { CyclingSession, Adaptation } from '@/lib/types';
-import ProgressChart from '@/components/progress-chart';
+import dynamic from 'next/dynamic';
+
+const ProgressChart = dynamic(() => import('@/components/progress-chart'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-40 text-zinc-500 text-sm">Loading chart...</div>,
+});
 
 type Tab = 'log' | 'history' | 'charts';
 
@@ -104,22 +109,22 @@ export default function CyclingPage() {
 
   if (loading) return <div className="flex items-center justify-center h-64 text-zinc-500">Loading...</div>;
 
-  const completedSessions = sessions.filter((s) => s.actualDuration !== null);
-  const durationData = completedSessions.map((s) => ({
+  const completedSessions = useMemo(() => sessions.filter((s) => s.actualDuration !== null), [sessions]);
+  const durationData = useMemo(() => completedSessions.map((s) => ({
     label: s.date.slice(5),
     actual: s.actualDuration,
     target: s.targetDuration,
-  }));
-  const rpeData = completedSessions
+  })), [completedSessions]);
+  const rpeData = useMemo(() => completedSessions
     .filter((s) => s.rpe !== null)
     .map((s) => ({
       label: s.date.slice(5),
       rpe: s.rpe,
-    }));
+    })), [completedSessions]);
 
   // Goal tracking: 180 min target
-  const maxDuration = completedSessions.reduce((max, s) => Math.max(max, s.actualDuration || 0), 0);
-  const goalProgress = Math.min(100, Math.round((maxDuration / 180) * 100));
+  const maxDuration = useMemo(() => completedSessions.reduce((max, s) => Math.max(max, s.actualDuration || 0), 0), [completedSessions]);
+  const goalProgress = useMemo(() => Math.min(100, Math.round((maxDuration / 180) * 100)), [maxDuration]);
 
   return (
     <div className="space-y-6">

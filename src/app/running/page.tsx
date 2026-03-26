@@ -1,8 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { RunningSession, Adaptation } from '@/lib/types';
-import ProgressChart from '@/components/progress-chart';
+import dynamic from 'next/dynamic';
+
+const ProgressChart = dynamic(() => import('@/components/progress-chart'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-40 text-zinc-500 text-sm">Loading chart...</div>,
+});
 
 type Tab = 'log' | 'history' | 'charts';
 
@@ -105,19 +110,19 @@ export default function RunningPage() {
 
   if (loading) return <div className="flex items-center justify-center h-64 text-zinc-500">Loading...</div>;
 
-  // Chart data
-  const completedSessions = sessions.filter((s) => s.actualDistance !== null);
-  const distanceData = completedSessions.map((s) => ({
+  // Chart data (memoized to avoid recalculation on every render)
+  const completedSessions = useMemo(() => sessions.filter((s) => s.actualDistance !== null), [sessions]);
+  const distanceData = useMemo(() => completedSessions.map((s) => ({
     label: s.date.slice(5),
     distance: s.actualDistance,
     target: s.targetDistance,
-  }));
-  const elevationData = completedSessions
+  })), [completedSessions]);
+  const elevationData = useMemo(() => completedSessions
     .filter((s) => s.elevationGain !== null)
     .map((s) => ({
       label: s.date.slice(5),
       elevation: s.elevationGain,
-    }));
+    })), [completedSessions]);
 
   return (
     <div className="space-y-6">

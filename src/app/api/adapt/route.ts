@@ -8,10 +8,15 @@ export async function GET() {
   try {
     const sql = neon(process.env.DATABASE_URL!);
 
-    const [runningRows, cyclingRows, sectionRows] = await Promise.all([
-      sql`SELECT * FROM running_sessions ORDER BY date ASC`,
-      sql`SELECT * FROM cycling_sessions ORDER BY date ASC`,
+    const currentWeek = getCurrentWeek();
+    // Adaptation only needs last 3 weeks of data
+    const minWeek = Math.max(1, currentWeek - 3);
+
+    const [runningRows, cyclingRows, sectionRows, weightSessionRows] = await Promise.all([
+      sql`SELECT * FROM running_sessions WHERE week >= ${minWeek} ORDER BY date ASC`,
+      sql`SELECT * FROM cycling_sessions WHERE week >= ${minWeek} ORDER BY date ASC`,
       sql`SELECT * FROM weights_sections ORDER BY id ASC`,
+      sql`SELECT * FROM weights_sessions WHERE week >= ${minWeek} ORDER BY date ASC`,
     ]);
 
     const running: RunningSession[] = runningRows.map((r) => ({
@@ -52,26 +57,26 @@ export async function GET() {
       notes: r.notes || '',
     }));
 
-    const weights: WeightsSection[] = [];
-    for (const section of sectionRows) {
-      const sessions = await sql`
-        SELECT * FROM weights_sessions WHERE section_key = ${section.section_key} ORDER BY date ASC
-      `;
-      weights.push({
-        sectionKey: section.section_key,
-        title: section.title,
-        dayOfWeek: section.day_of_week,
-        location: section.location,
-        exerciseNames: (section.exercises as { name: string }[]).map((e) => e.name),
-        sessions: sessions.map((s) => ({
-          week: s.week,
-          date: s.date instanceof Date ? s.date.toISOString().split('T')[0] : String(s.date).split('T')[0],
-          exercises: s.exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>,
-        })),
-      });
+    // Group weight sessions by section_key (eliminates N+1)
+    const sessionsBySection = new Map<string, typeof weightSessionRows>();
+    for (const s of weightSessionRows) {
+      const key = s.section_key as string;
+      if (!sessionsBySection.has(key)) sessionsBySection.set(key, []);
+      sessionsBySection.get(key)!.push(s);
     }
 
-    const currentWeek = getCurrentWeek();
+    const weights: WeightsSection[] = sectionRows.map((section) => ({
+      sectionKey: section.section_key,
+      title: section.title,
+      dayOfWeek: section.day_of_week,
+      location: section.location,
+      exerciseNames: (section.exercises as { name: string }[]).map((e) => e.name),
+      sessions: (sessionsBySection.get(section.section_key as string) || []).map((s) => ({
+        week: s.week,
+        date: s.date instanceof Date ? s.date.toISOString().split('T')[0] : String(s.date).split('T')[0],
+        exercises: s.exercises as Record<string, { weight: string; sets: (number | null)[]; total: number | null }>,
+      })),
+    }));
     const adaptations = generateAdaptations(running, cycling, weights, currentWeek);
     return NextResponse.json({ week: currentWeek, adaptations });
   } catch (error) {

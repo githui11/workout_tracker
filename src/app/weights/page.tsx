@@ -1,8 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { WeightsSection, Adaptation } from '@/lib/types';
-import ProgressChart from '@/components/progress-chart';
+import dynamic from 'next/dynamic';
+
+const ProgressChart = dynamic(() => import('@/components/progress-chart'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-40 text-zinc-500 text-sm">Loading chart...</div>,
+});
 
 type Tab = 'log' | 'history' | 'charts';
 
