@@ -45,37 +45,39 @@ function WeightIcon({ active }: { active: boolean }) {
 }
 
 const tabs = [
-  { href: '/', label: 'Home', Icon: HomeIcon },
-  { href: '/running', label: 'Run', Icon: RunIcon },
-  { href: '/cycling', label: 'Cycle', Icon: CycleIcon },
-  { href: '/bodyweight', label: 'Weight', Icon: WeightIcon },
+  { href: '/', label: 'Home', Icon: HomeIcon, activeColor: 'text-white' },
+  { href: '/running', label: 'Run', Icon: RunIcon, activeColor: 'text-emerald-400' },
+  { href: '/cycling', label: 'Cycle', Icon: CycleIcon, activeColor: 'text-blue-400' },
+  { href: '/bodyweight', label: 'Weight', Icon: WeightIcon, activeColor: 'text-purple-400' },
 ];
 
 export default function NavBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800/60 bg-zinc-950/80 backdrop-blur-xl">
-      <div className="flex justify-around items-center h-[4.25rem] max-w-lg mx-auto px-2 pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-950/70 backdrop-blur-2xl border-t border-white/[0.04]">
+      <div className="flex justify-around items-center h-[4.5rem] max-w-lg mx-auto px-3 pb-[env(safe-area-inset-bottom)]">
         {tabs.map((tab) => {
           const active = pathname === tab.href;
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all duration-200 ${
+              className={`relative flex flex-col items-center gap-0.5 px-5 py-2 rounded-2xl transition-all duration-300 ${
                 active
-                  ? 'text-blue-400'
-                  : 'text-zinc-500 hover:text-zinc-300 active:scale-95'
+                  ? tab.activeColor
+                  : 'text-zinc-600 hover:text-zinc-400 active:scale-95'
               }`}
             >
-              <tab.Icon active={active} />
-              <span className={`text-[10px] tracking-wide ${active ? 'font-semibold' : 'font-medium'}`}>
+              {active && (
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/[0.06]" />
+              )}
+              <div className="relative z-10">
+                <tab.Icon active={active} />
+              </div>
+              <span className={`relative z-10 text-[10px] tracking-wide ${active ? 'font-bold' : 'font-medium'}`}>
                 {tab.label}
               </span>
-              {active && (
-                <span className="absolute -bottom-0 w-8 h-0.5 rounded-full bg-blue-400" />
-              )}
             </Link>
           );
         })}
