@@ -15,9 +15,9 @@ function HomeIcon({ active }: { active: boolean }) {
 function RunIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="17" cy="4" r="2" />
-      <path d="M15 21l-3-6-4 3-3-3" />
-      <path d="M12 15l2-8 4 2 3-3" />
+      {/* Sneaker / running shoe */}
+      <path d="M4 17h14a3 3 0 003-3l-2-4h-5l-1.5 2H8L6 9H3v5l1 3z" />
+      <line x1="4" y1="19" x2="18" y2="19" />
     </svg>
   );
 }
