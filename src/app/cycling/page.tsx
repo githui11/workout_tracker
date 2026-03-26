@@ -96,7 +96,7 @@ export default function CyclingPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-3">
         <div className="h-7 w-28 bg-zinc-800/60 rounded-lg animate-shimmer" />
         <div className="h-24 bg-zinc-800/30 rounded-2xl animate-shimmer delay-1" />
         <div className="h-10 bg-zinc-800/40 rounded-xl animate-shimmer delay-2" />
@@ -106,20 +106,20 @@ export default function CyclingPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="animate-fadeInUp">
         <h1 className="text-2xl font-bold tracking-tight">Cycling</h1>
 
         {/* Goal progress */}
-        <div className="mt-3 bg-zinc-900/50 backdrop-blur-sm rounded-2xl p-5 border border-zinc-800/30">
-          <div className="flex justify-between items-end mb-3">
+        <div className="mt-2 bg-zinc-900/50 backdrop-blur-sm rounded-2xl p-3.5 border border-zinc-800/30">
+          <div className="flex justify-between items-end mb-2">
             <div>
               <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Goal Progress</p>
-              <p className="text-2xl font-bold text-blue-400 mt-1">
+              <p className="text-xl font-bold text-blue-400 mt-0.5">
                 {maxDuration}<span className="text-sm font-medium text-zinc-500 ml-1">/ 180 min</span>
               </p>
             </div>
-            <span className="text-3xl font-bold text-zinc-800">{goalProgress}%</span>
+            <span className="text-2xl font-bold text-zinc-800">{goalProgress}%</span>
           </div>
           <div className="w-full bg-zinc-800/50 rounded-full h-2 overflow-hidden">
             <div
@@ -149,7 +149,7 @@ export default function CyclingPage() {
 
       {tab === 'log' && (
         <div className="animate-fadeInUp delay-2">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div className="bg-zinc-900/50 backdrop-blur-sm rounded-2xl p-4 space-y-2.5 border border-zinc-800/30">
               {isAdHoc && (
                 <div className="text-xs font-semibold text-amber-400 bg-amber-500/[0.06] rounded-lg px-3 py-1.5 mb-2 text-center border border-amber-500/15">
@@ -168,7 +168,7 @@ export default function CyclingPage() {
               )}
             </div>
 
-            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-4 space-y-3">
+            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-3.5 space-y-2.5">
               <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.12em]">Session</h3>
               <div>
                 <label className="block text-xs font-medium text-zinc-400 mb-1.5">Duration (min)</label>
@@ -194,7 +194,7 @@ export default function CyclingPage() {
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 disabled:from-blue-600/50 disabled:to-blue-500/50 text-white py-3.5 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] shadow-lg shadow-blue-500/10"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 disabled:from-blue-600/50 disabled:to-blue-500/50 text-white py-3 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] shadow-lg shadow-blue-500/10"
             >
               {saving ? (
                 <span className="flex items-center justify-center gap-2">
