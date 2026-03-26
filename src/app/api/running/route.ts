@@ -3,11 +3,34 @@ import { neon } from '@neondatabase/serverless';
 import { getRunningDefaults, getDayName, getWeekForDate } from '@/lib/defaults';
 import { applyAdaptations } from '@/lib/adapt';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapRow(r: Record<string, any>) {
+  return {
+    week: r.week,
+    date: r.date,
+    day: r.day,
+    time: r.time,
+    phase: r.phase,
+    workoutType: r.workout_type,
+    targetDistance: r.target_distance,
+    targetPace: r.target_pace,
+    actualDistance: r.actual_distance ?? null,
+    actualPace: r.actual_pace ?? null,
+    duration: r.duration ?? null,
+    movingTime: r.moving_time ?? null,
+    elevationGain: r.elevation_gain ?? null,
+    maxElevation: r.max_elevation ?? null,
+    warmupDone: r.warmup_done ?? '',
+    howLegsFeel: r.how_legs_feel ?? '',
+    notes: r.notes ?? '',
+  };
+}
+
 export async function GET() {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     const rows = await sql`SELECT * FROM running_sessions ORDER BY date ASC`;
-    return NextResponse.json(rows);
+    return NextResponse.json(rows.map(mapRow));
   } catch (error) {
     console.error('Failed to fetch running data:', error);
     return NextResponse.json({ error: 'Failed to fetch running data' }, { status: 500 });

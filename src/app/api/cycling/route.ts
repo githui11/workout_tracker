@@ -3,11 +3,24 @@ import { neon } from '@neondatabase/serverless';
 import { getCyclingDefaults, getDayName, getWeekForDate } from '@/lib/defaults';
 import { applyAdaptations } from '@/lib/adapt';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapRow(r: Record<string, any>) {
+  return {
+    week: r.week,
+    date: r.date,
+    day: r.day,
+    time: r.time,
+    targetDuration: r.target_duration,
+    actualDuration: r.actual_duration ?? null,
+    notes: r.notes ?? '',
+  };
+}
+
 export async function GET() {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     const rows = await sql`SELECT * FROM cycling_sessions ORDER BY date ASC`;
-    return NextResponse.json(rows);
+    return NextResponse.json(rows.map(mapRow));
   } catch (error) {
     console.error('Failed to fetch cycling data:', error);
     return NextResponse.json({ error: 'Failed to fetch cycling data' }, { status: 500 });
