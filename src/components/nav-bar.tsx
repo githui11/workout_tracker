@@ -36,10 +36,10 @@ function CycleIcon({ active }: { active: boolean }) {
 function WeightIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 3a4 4 0 00-4 4h8a4 4 0 00-4-4z" />
-      <rect x="2" y="7" width="20" height="14" rx="2" />
-      <line x1="12" y1="11" x2="12" y2="17" />
-      <line x1="9" y1="14" x2="15" y2="14" />
+      {/* Bathroom scale icon */}
+      <rect x="3" y="6" width="18" height="14" rx="3" />
+      <circle cx="12" cy="13" r="4" />
+      <line x1="12" y1="11" x2="14" y2="12" />
     </svg>
   );
 }
