@@ -57,6 +57,8 @@ export default function RunningPage() {
     notes: '',
   } as RunningSession;
 
+  const [logDate, setLogDate] = useState(today);
+
   const [form, setForm] = useState({
     actualDistance: '',
     actualPace: '',
@@ -85,6 +87,12 @@ export default function RunningPage() {
     }
   }, [currentSession]);
 
+  async function handleDelete(date: string) {
+    await fetch(`/api/running?date=${date}`, { method: 'DELETE' });
+    const updated = await fetch('/api/running').then((r) => r.json());
+    setSessions(updated);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -93,7 +101,7 @@ export default function RunningPage() {
       const res = await fetch('/api/running', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: today, ...form }),
+        body: JSON.stringify({ date: logDate, ...form }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -174,9 +182,15 @@ export default function RunningPage() {
                   Carried over from {currentSession.date} ({currentSession.day})
                 </div>
               )}
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between items-center text-sm">
                 <span className="text-zinc-500">Date</span>
-                <span className="font-medium">{isCarryOver ? `${today} (${todayDow})` : `${currentSession.date} (${currentSession.day})`}</span>
+                <input
+                  type="date"
+                  max={today}
+                  value={logDate}
+                  onChange={(e) => setLogDate(e.target.value)}
+                  className="bg-transparent text-right font-medium focus:outline-none text-white"
+                />
               </div>
               {!isAdHoc && (
                 <>
@@ -309,7 +323,18 @@ export default function RunningPage() {
                     <span className="text-sm font-semibold">{s.date}</span>
                     <span className="text-xs text-emerald-400/70 font-medium ml-2">{s.workoutType}</span>
                   </div>
-                  <span className="text-emerald-400 font-bold text-sm">{s.actualDistance} km</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-emerald-400 font-bold text-sm">{s.actualDistance} km</span>
+                    <button
+                      onClick={() => handleDelete(s.date)}
+                      className="text-zinc-600 hover:text-red-400 transition-colors"
+                      aria-label="Delete session"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <div className="flex gap-3 text-[11px] text-zinc-500 mt-2">
                   {s.actualPace && <span>{s.actualPace} /km</span>}

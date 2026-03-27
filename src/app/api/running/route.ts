@@ -37,6 +37,26 @@ export async function GET() {
   }
 }
 
+export async function DELETE(request: Request) {
+  try {
+    const sql = neon(process.env.DATABASE_URL!);
+    const { searchParams } = new URL(request.url);
+    const date = searchParams.get('date');
+    if (!date) return NextResponse.json({ error: 'date required' }, { status: 400 });
+
+    const rows = await sql`SELECT time FROM running_sessions WHERE date = ${date}`;
+    if (rows[0]?.time === 'Ad-hoc') {
+      await sql`DELETE FROM running_sessions WHERE date = ${date}`;
+    } else {
+      await sql`UPDATE running_sessions SET actual_distance = NULL, actual_pace = NULL, duration = NULL, moving_time = NULL, elevation_gain = NULL, max_elevation = NULL, warmup_done = NULL, how_legs_feel = NULL, notes = NULL WHERE date = ${date}`;
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Failed to delete running session:', error);
+    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const sql = neon(process.env.DATABASE_URL!);

@@ -47,6 +47,8 @@ export default function CyclingPage() {
     notes: '',
   } as CyclingSession;
 
+  const [logDate, setLogDate] = useState(today);
+
   const [form, setForm] = useState({
     actualDuration: '',
     notes: '',
@@ -61,6 +63,12 @@ export default function CyclingPage() {
     }
   }, [currentSession]);
 
+  async function handleDelete(date: string) {
+    await fetch(`/api/cycling?date=${date}`, { method: 'DELETE' });
+    const updated = await fetch('/api/cycling').then((r) => r.json());
+    setSessions(updated);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -69,7 +77,7 @@ export default function CyclingPage() {
       const res = await fetch('/api/cycling', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: today, ...form }),
+        body: JSON.stringify({ date: logDate, ...form }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -163,9 +171,15 @@ export default function CyclingPage() {
                   Carried over from {currentSession.date} ({currentSession.day})
                 </div>
               )}
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between items-center text-sm">
                 <span className="text-zinc-500">Date</span>
-                <span className="font-medium">{isCarryOver ? `${today} (${todayDow})` : `${currentSession.date} (${currentSession.day})`}</span>
+                <input
+                  type="date"
+                  max={today}
+                  value={logDate}
+                  onChange={(e) => setLogDate(e.target.value)}
+                  className="bg-transparent text-right font-medium focus:outline-none text-white"
+                />
               </div>
               {!isAdHoc && (
                 <div className="flex justify-between text-sm">
@@ -252,7 +266,18 @@ export default function CyclingPage() {
               >
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold">{s.date}</span>
-                  <span className="text-blue-400 font-bold text-sm">{s.actualDuration} min</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-blue-400 font-bold text-sm">{s.actualDuration} min</span>
+                    <button
+                      onClick={() => handleDelete(s.date)}
+                      className="text-zinc-600 hover:text-red-400 transition-colors"
+                      aria-label="Delete session"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 {s.notes && <p className="text-xs text-zinc-600 mt-2 leading-relaxed">{s.notes}</p>}
               </div>
