@@ -63,10 +63,13 @@ export default function CyclingPage() {
     }
   }, [currentSession]);
 
-  async function handleDelete(date: string) {
-    await fetch(`/api/cycling?date=${date}`, { method: 'DELETE' });
-    const updated = await fetch('/api/cycling').then((r) => r.json());
-    setSessions(updated);
+  function handleEdit(s: CyclingSession) {
+    setLogDate(s.date);
+    setForm({
+      actualDuration: s.actualDuration?.toString() || '',
+      notes: s.notes || '',
+    });
+    setTab('log');
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -269,12 +272,12 @@ export default function CyclingPage() {
                   <div className="flex items-center gap-3">
                     <span className="text-blue-400 font-bold text-sm">{s.actualDuration} min</span>
                     <button
-                      onClick={() => handleDelete(s.date)}
-                      className="text-zinc-600 hover:text-red-400 transition-colors"
-                      aria-label="Delete session"
+                      onClick={() => handleEdit(s)}
+                      className="text-zinc-600 hover:text-blue-400 transition-colors"
+                      aria-label="Edit session"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
                     </button>
                   </div>
