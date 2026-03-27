@@ -216,7 +216,6 @@ export default function RunningPage() {
               <div className="grid grid-cols-2 gap-3">
                 <Input label="Distance (km)" value={form.actualDistance} onChange={(v) => setForm({ ...form, actualDistance: v })} type="number" step="0.1" accent="emerald" />
                 <Input label="Pace (min/km)" value={form.actualPace} onChange={(v) => setForm({ ...form, actualPace: v })} placeholder="6:30" accent="emerald" />
-                <Input label="Duration (min)" value={form.duration} onChange={(v) => setForm({ ...form, duration: v })} type="number" accent="emerald" />
                 <Input label="Moving Time" value={form.movingTime} onChange={(v) => setForm({ ...form, movingTime: v })} placeholder="25:30" accent="emerald" />
               </div>
             </div>
