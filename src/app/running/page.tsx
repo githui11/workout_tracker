@@ -93,7 +93,7 @@ export default function RunningPage() {
       const res = await fetch('/api/running', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: currentSession.date, ...form }),
+        body: JSON.stringify({ date: today, ...form }),
       });
       if (res.ok) {
         const data = await res.json();
