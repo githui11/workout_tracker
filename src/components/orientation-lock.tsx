@@ -6,16 +6,21 @@ export default function OrientationLock() {
   const [isLandscape, setIsLandscape] = useState(false);
 
   useEffect(() => {
-    // Try the Screen Orientation API (Android Chrome, some browsers)
-    try {
-      screen?.orientation?.lock?.('portrait').catch(() => {});
-    } catch {}
+    // Screen Orientation API — works on Android Chrome in fullscreen/standalone PWA
+    const lockOrientation = () => {
+      try {
+        screen?.orientation?.lock?.('portrait').catch(() => {});
+      } catch {}
+    };
+    lockOrientation();
+    document.addEventListener('visibilitychange', lockOrientation);
 
     const check = () => setIsLandscape(window.innerWidth > window.innerHeight);
     check();
     window.addEventListener('resize', check);
     window.addEventListener('orientationchange', check);
     return () => {
+      document.removeEventListener('visibilitychange', lockOrientation);
       window.removeEventListener('resize', check);
       window.removeEventListener('orientationchange', check);
     };

@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'Tracker',
     description: 'Track running and cycling progress',
     start_url: '/',
-    display: 'standalone',
+    display: 'fullscreen',
     background_color: '#0a0a0a',
     theme_color: '#0a0a0a',
     orientation: 'portrait',
