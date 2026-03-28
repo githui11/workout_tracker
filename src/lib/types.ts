@@ -46,6 +46,52 @@ export interface BodyWeightEntry {
 }
 
 // ============================================================
+// MEALS & NUTRITION
+// ============================================================
+export interface Food {
+  id: number;
+  name: string;
+  brand: string;
+  servingSize: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number | null;
+  isCustom: boolean;
+}
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export interface MealEntry {
+  id: number;
+  date: string;
+  mealType: MealType;
+  foodId: number | null;
+  foodName: string;
+  servings: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  notes: string;
+}
+
+export interface NutritionGoals {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface DailyNutrition {
+  date: string;
+  meals: MealEntry[];
+  totals: { calories: number; protein: number; carbs: number; fat: number };
+  goals: NutritionGoals;
+}
+
+// ============================================================
 // SUMMARY & ADAPT
 // ============================================================
 export interface WeeklySummary {
