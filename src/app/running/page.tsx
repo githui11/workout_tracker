@@ -57,7 +57,7 @@ export default function RunningPage() {
     notes: '',
   } as RunningSession;
 
-  const [logDate, setLogDate] = useState(today);
+  const [logDate, setLogDate] = useState(currentSession.date);
 
   const [form, setForm] = useState({
     actualDistance: '',

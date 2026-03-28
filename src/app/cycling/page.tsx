@@ -48,7 +48,7 @@ export default function CyclingPage() {
     notes: '',
   } as CyclingSession;
 
-  const [logDate, setLogDate] = useState(today);
+  const [logDate, setLogDate] = useState(currentSession.date);
 
   const [form, setForm] = useState({
     actualDuration: '',
