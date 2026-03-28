@@ -19,32 +19,22 @@ export async function GET(request: Request) {
       is_custom BOOLEAN DEFAULT true,
       created_at TIMESTAMP DEFAULT NOW()
     )`;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS foods_name_idx ON foods (name)`;
 
-    // Seed on first load; upsert defaults whenever macros are stale
-    const existing = await sql`SELECT name, calories, protein, carbs, fat, serving_size FROM foods`;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dbMap = new Map(existing.map((r: any) => [r.name as string, r]));
+    // Always upsert default foods to keep macros in sync with code
     for (const f of DEFAULT_FOODS) {
-      const row = dbMap.get(f.name);
-      if (!row) {
-        await sql`
-          INSERT INTO foods (name, brand, serving_size, calories, protein, carbs, fat, fiber)
-          VALUES (${f.name}, ${f.brand}, ${f.serving_size}, ${f.calories}, ${f.protein}, ${f.carbs}, ${f.fat}, ${f.fiber ?? null})
-        `;
-      } else if (
-        Math.round(parseFloat(row.calories)) !== f.calories ||
-        Math.abs(parseFloat(row.protein) - f.protein) > 0.05 ||
-        Math.abs(parseFloat(row.carbs)   - f.carbs)   > 0.05 ||
-        Math.abs(parseFloat(row.fat)     - f.fat)     > 0.05 ||
-        row.serving_size !== f.serving_size
-      ) {
-        await sql`
-          UPDATE foods SET brand=${f.brand}, serving_size=${f.serving_size},
-            calories=${f.calories}, protein=${f.protein}, carbs=${f.carbs},
-            fat=${f.fat}, fiber=${f.fiber ?? null}
-          WHERE name=${f.name}
-        `;
-      }
+      await sql`
+        INSERT INTO foods (name, brand, serving_size, calories, protein, carbs, fat, fiber)
+        VALUES (${f.name}, ${f.brand}, ${f.serving_size}, ${f.calories}, ${f.protein}, ${f.carbs}, ${f.fat}, ${f.fiber ?? null})
+        ON CONFLICT (name) DO UPDATE SET
+          brand        = EXCLUDED.brand,
+          serving_size = EXCLUDED.serving_size,
+          calories     = EXCLUDED.calories,
+          protein      = EXCLUDED.protein,
+          carbs        = EXCLUDED.carbs,
+          fat          = EXCLUDED.fat,
+          fiber        = EXCLUDED.fiber
+      `;
     }
 
     const { searchParams } = new URL(request.url);
