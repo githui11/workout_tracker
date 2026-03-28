@@ -31,4 +31,8 @@ export const DEFAULT_FOODS = [
   { name: 'Carrot',              serving_size: '1 medium (80g)',                     calories: 33,  protein: 0.7,  carbs: 7.7,  fat: 0.1,  fiber: 2.3,  brand: null },
   { name: 'Zucchini',            serving_size: '100g',                               calories: 17,  protein: 1.2,  carbs: 3.1,  fat: 0.3,  fiber: 1.0,  brand: null },
   { name: 'Green Peas',          serving_size: '100g',                               calories: 81,  protein: 5.4,  carbs: 14.0, fat: 0.4,  fiber: 5.1,  brand: null },
+
+  // Fruits / Snacks
+  { name: 'Watermelon',          serving_size: '100g',                               calories: 30,  protein: 0.6,  carbs: 7.6,  fat: 0.2,  fiber: 0.4,  brand: null },
+  { name: 'Banana',              serving_size: '1 medium (120g)',                    calories: 107, protein: 1.3,  carbs: 27.0, fat: 0.4,  fiber: 3.1,  brand: null },
 ];
