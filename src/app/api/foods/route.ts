@@ -19,6 +19,8 @@ export async function GET(request: Request) {
       is_custom BOOLEAN DEFAULT true,
       created_at TIMESTAMP DEFAULT NOW()
     )`;
+    // Deduplicate: keep lowest id per name so unique index can be created
+    await sql`DELETE FROM foods a USING foods b WHERE a.name = b.name AND a.id > b.id`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS foods_name_idx ON foods (name)`;
 
     // Always upsert default foods to keep macros in sync with code
