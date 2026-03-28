@@ -73,6 +73,11 @@ body::before {
   animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
 @utility delay-1 { animation-delay: 50ms; }
 @utility delay-2 { animation-delay: 100ms; }
 @utility delay-3 { animation-delay: 150ms; }

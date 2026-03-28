@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import type { CyclingSession, Adaptation } from '@/lib/types';
 import dynamic from 'next/dynamic';
+import DurationPicker, { formatDuration } from '@/components/duration-picker';
 
 const ProgressChart = dynamic(() => import('@/components/progress-chart'), {
   ssr: false,
@@ -50,17 +51,15 @@ export default function CyclingPage() {
 
   const [logDate, setLogDate] = useState(currentSession.date);
 
-  const [form, setForm] = useState({
-    actualDuration: '',
-    howLegsFeel: '',
-    notes: '',
-  });
+  const [durationSeconds, setDurationSeconds] = useState(0);
+  const [form, setForm] = useState({ howLegsFeel: '', notes: '' });
 
   useEffect(() => {
     setLogDate(currentSession.date);
     if (currentSession.actualDuration !== null) {
+      // existing data stored as minutes → convert to seconds
+      setDurationSeconds((currentSession.actualDuration ?? 0) * 60);
       setForm({
-        actualDuration: currentSession.actualDuration?.toString() || '',
         howLegsFeel: currentSession.howLegsFeel || '',
         notes: currentSession.notes || '',
       });
@@ -69,11 +68,8 @@ export default function CyclingPage() {
 
   function handleEdit(s: CyclingSession) {
     setLogDate(s.date);
-    setForm({
-      actualDuration: s.actualDuration?.toString() || '',
-      howLegsFeel: s.howLegsFeel || '',
-      notes: s.notes || '',
-    });
+    setDurationSeconds((s.actualDuration ?? 0) * 60);
+    setForm({ howLegsFeel: s.howLegsFeel || '', notes: s.notes || '' });
     setTab('log');
   }
 
@@ -85,7 +81,7 @@ export default function CyclingPage() {
       const res = await fetch('/api/cycling', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: logDate, ...form }),
+        body: JSON.stringify({ date: logDate, actualDuration: Math.round(durationSeconds / 60), ...form }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -200,18 +196,9 @@ export default function CyclingPage() {
               )}
             </div>
 
-            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-3.5 space-y-2.5">
-              <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.12em]">Session</h3>
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Duration (min)</label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={form.actualDuration}
-                  onChange={(e) => setForm({ ...form, actualDuration: e.target.value })}
-                  className={`w-full bg-zinc-900/80 rounded-xl px-3.5 py-2.5 text-sm border ${form.actualDuration ? 'border-zinc-700' : 'border-zinc-800/60'} focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all`}
-                />
-              </div>
+            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-3.5 space-y-1">
+              <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.12em]">Duration</h3>
+              <DurationPicker value={durationSeconds} onChange={setDurationSeconds} />
               <div>
                 <label className="block text-xs font-medium text-zinc-400 mb-1.5">Notes</label>
                 <input
@@ -299,7 +286,7 @@ export default function CyclingPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold">{s.date}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-blue-400 font-bold text-sm">{s.actualDuration} min</span>
+                    <span className="text-blue-400 font-bold text-sm">{formatDuration((s.actualDuration ?? 0) * 60)}</span>
                     <button
                       onClick={() => handleEdit(s)}
                       className="text-zinc-600 hover:text-blue-400 transition-colors"
