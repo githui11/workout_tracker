@@ -35,4 +35,6 @@ export const DEFAULT_FOODS = [
   // Fruits / Snacks
   { name: 'Watermelon',          serving_size: '100g',                               calories: 30,  protein: 0.6,  carbs: 7.6,  fat: 0.2,  fiber: 0.4,  brand: null },
   { name: 'Banana',              serving_size: '1 medium (120g)',                    calories: 107, protein: 1.3,  carbs: 27.0, fat: 0.4,  fiber: 3.1,  brand: null },
+  { name: 'Apple',               serving_size: '1 medium (182g)',                    calories: 95,  protein: 0.5,  carbs: 25.0, fat: 0.3,  fiber: 4.4,  brand: null },
+  { name: 'Mango',               serving_size: '1 cup sliced (165g)',                calories: 99,  protein: 1.4,  carbs: 25.0, fat: 0.6,  fiber: 2.6,  brand: null },
 ];
