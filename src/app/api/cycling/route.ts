@@ -12,6 +12,7 @@ function mapRow(r: Record<string, any>) {
     time: r.time,
     targetDuration: r.target_duration,
     actualDuration: r.actual_duration ?? null,
+    howLegsFeel: r.how_legs_feel ?? '',
     notes: r.notes ?? '',
   };
 }
@@ -38,7 +39,7 @@ export async function DELETE(request: Request) {
     if (rows[0]?.time === 'Ad-hoc') {
       await sql`DELETE FROM cycling_sessions WHERE date = ${date}`;
     } else {
-      await sql`UPDATE cycling_sessions SET actual_duration = NULL, notes = NULL WHERE date = ${date}`;
+      await sql`UPDATE cycling_sessions SET actual_duration = NULL, how_legs_feel = NULL, notes = NULL WHERE date = ${date}`;
     }
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -51,11 +52,12 @@ export async function POST(request: Request) {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     const body = await request.json();
-    const { date, actualDuration, notes } = body;
+    const { date, actualDuration, howLegsFeel, notes } = body;
 
     const result = await sql`
       UPDATE cycling_sessions SET
         actual_duration = ${actualDuration || null},
+        how_legs_feel = ${howLegsFeel || null},
         notes = ${notes || null}
       WHERE date = ${date}
       RETURNING id`;
@@ -66,10 +68,10 @@ export async function POST(request: Request) {
       const day = getDayName(date);
       await sql`
         INSERT INTO cycling_sessions
-          (week, date, day, time, target_duration, actual_duration, notes)
+          (week, date, day, time, target_duration, actual_duration, how_legs_feel, notes)
         VALUES
           (${week}, ${date}, ${day}, 'Ad-hoc', ${defaults.targetDuration},
-           ${actualDuration || null}, ${notes || null})`;
+           ${actualDuration || null}, ${howLegsFeel || null}, ${notes || null})`;
     }
 
     const adaptations = await applyAdaptations(sql, 'cycling', date);

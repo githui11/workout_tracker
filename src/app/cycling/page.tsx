@@ -44,6 +44,7 @@ export default function CyclingPage() {
     time: 'Ad-hoc',
     targetDuration: 0,
     actualDuration: null,
+    howLegsFeel: '',
     notes: '',
   } as CyclingSession;
 
@@ -51,6 +52,7 @@ export default function CyclingPage() {
 
   const [form, setForm] = useState({
     actualDuration: '',
+    howLegsFeel: '',
     notes: '',
   });
 
@@ -58,6 +60,7 @@ export default function CyclingPage() {
     if (currentSession && currentSession.actualDuration !== null) {
       setForm({
         actualDuration: currentSession.actualDuration?.toString() || '',
+        howLegsFeel: currentSession.howLegsFeel || '',
         notes: currentSession.notes || '',
       });
     }
@@ -67,6 +70,7 @@ export default function CyclingPage() {
     setLogDate(s.date);
     setForm({
       actualDuration: s.actualDuration?.toString() || '',
+      howLegsFeel: s.howLegsFeel || '',
       notes: s.notes || '',
     });
     setTab('log');
@@ -215,6 +219,26 @@ export default function CyclingPage() {
               </div>
             </div>
 
+            {/* Recovery group */}
+            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-3.5 space-y-2.5">
+              <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.12em]">Recovery</h3>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">How Legs Feel</label>
+                <select
+                  value={form.howLegsFeel}
+                  onChange={(e) => setForm({ ...form, howLegsFeel: e.target.value })}
+                  className="w-full bg-zinc-900/80 rounded-xl px-3.5 py-2.5 text-sm border border-zinc-800/60 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all"
+                >
+                  <option value="">--</option>
+                  <option value="1">1 - Wrecked</option>
+                  <option value="2">2 - Sore</option>
+                  <option value="3">3 - OK</option>
+                  <option value="4">4 - Good</option>
+                  <option value="5">5 - Fresh</option>
+                </select>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={saving}
@@ -281,6 +305,9 @@ export default function CyclingPage() {
                       </svg>
                     </button>
                   </div>
+                </div>
+                <div className="flex gap-3 text-[11px] text-zinc-500 mt-2">
+                  {s.howLegsFeel && <span>Legs {s.howLegsFeel}/5</span>}
                 </div>
                 {s.notes && <p className="text-xs text-zinc-600 mt-2 leading-relaxed">{s.notes}</p>}
               </div>

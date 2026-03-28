@@ -31,6 +31,7 @@ export interface CyclingSession {
   time: string;
   targetDuration: number;
   actualDuration: number | null;
+  howLegsFeel: string;
   notes: string;
 }
 

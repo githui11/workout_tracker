@@ -117,6 +117,27 @@ function analyzeCycling(sessions: CyclingSession[], currentWeek: number): Adapta
     (s) => recentWeeks.includes(s.week) && s.actualDuration !== null
   );
 
+  // Check leg feel scores
+  const legFeelScores = recentCompleted
+    .map((s) => {
+      const n = parseInt(s.howLegsFeel);
+      if (!isNaN(n)) return n;
+      return null;
+    })
+    .filter((n): n is number => n !== null);
+
+  if (legFeelScores.length >= 2) {
+    const avgFeel = legFeelScores.reduce((a, b) => a + b, 0) / legFeelScores.length;
+    if (avgFeel <= 2) {
+      adaptations.push({
+        type: 'reduce_volume',
+        category: 'cycling',
+        message: `Your legs have been consistently sore on the bike (avg ${avgFeel.toFixed(1)}/5). Reducing next session's duration by 10%.`,
+        severity: 'warning',
+      });
+    }
+  }
+
   // Check for missed sessions
   const lastWeekSessions = sessions.filter((s) => s.week === currentWeek - 1);
   const lastWeekCompleted = lastWeekSessions.filter((s) => s.actualDuration !== null);
@@ -133,11 +154,12 @@ function analyzeCycling(sessions: CyclingSession[], currentWeek: number): Adapta
   if (recentCompleted.length >= 2) {
     const allOverTarget = recentCompleted.every((s) => (s.actualDuration || 0) > s.targetDuration * 1.15);
     const noMissedLastWeek = lastWeekSessions.length === 0 || lastWeekCompleted.length >= lastWeekSessions.length;
-    if (allOverTarget && noMissedLastWeek) {
+    const legsGood = legFeelScores.length === 0 || legFeelScores.every((s) => s >= 4);
+    if (allOverTarget && noMissedLastWeek && legsGood) {
       adaptations.push({
         type: 'increase_volume',
         category: 'cycling',
-        message: 'You\'re consistently exceeding duration targets and completed all sessions. Adding 10 minutes to next target.',
+        message: 'You\'re consistently exceeding duration targets, legs feel good, and completed all sessions. Adding 10 minutes to next target.',
         severity: 'success',
       });
     }
@@ -197,7 +219,7 @@ export async function applyAdaptations(
     week: r.week,
     date: r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date).split('T')[0],
     day: r.day, time: r.time, targetDuration: r.target_duration,
-    actualDuration: r.actual_duration, notes: r.notes || '',
+    actualDuration: r.actual_duration, howLegsFeel: r.how_legs_feel || '', notes: r.notes || '',
   }));
 
   const allAdaptations = generateAdaptations(running, cycling, currentWeek);

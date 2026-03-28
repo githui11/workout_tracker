@@ -42,6 +42,7 @@ export async function GET(request: Request) {
       time: r.time,
       targetDuration: r.target_duration,
       actualDuration: r.actual_duration,
+      howLegsFeel: r.how_legs_feel || '',
       notes: r.notes || '',
     }));
 
