@@ -20,13 +20,28 @@ export async function GET(request: Request) {
       created_at TIMESTAMP DEFAULT NOW()
     )`;
 
-    // Auto-seed on first load
-    const count = await sql`SELECT COUNT(*) AS n FROM foods`;
-    if (Number(count[0].n) === 0) {
-      for (const f of DEFAULT_FOODS) {
+    // Seed on first load; upsert defaults whenever macros are stale
+    const existing = await sql`SELECT name, calories, protein, carbs, fat, serving_size FROM foods`;
+    const dbMap = new Map(existing.map((r: { name: string; calories: number; protein: number; carbs: number; fat: number; serving_size: string }) => [r.name, r]));
+    for (const f of DEFAULT_FOODS) {
+      const row = dbMap.get(f.name);
+      if (!row) {
         await sql`
           INSERT INTO foods (name, brand, serving_size, calories, protein, carbs, fat, fiber)
           VALUES (${f.name}, ${f.brand}, ${f.serving_size}, ${f.calories}, ${f.protein}, ${f.carbs}, ${f.fat}, ${f.fiber ?? null})
+        `;
+      } else if (
+        Number(row.calories) !== f.calories ||
+        Number(row.protein) !== f.protein ||
+        Number(row.carbs) !== f.carbs ||
+        Number(row.fat) !== f.fat ||
+        row.serving_size !== f.serving_size
+      ) {
+        await sql`
+          UPDATE foods SET brand=${f.brand}, serving_size=${f.serving_size},
+            calories=${f.calories}, protein=${f.protein}, carbs=${f.carbs},
+            fat=${f.fat}, fiber=${f.fiber ?? null}
+          WHERE name=${f.name}
         `;
       }
     }
