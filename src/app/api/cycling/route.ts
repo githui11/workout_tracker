@@ -20,6 +20,7 @@ function mapRow(r: Record<string, any>) {
 export async function GET() {
   try {
     const sql = neon(process.env.DATABASE_URL!);
+    await sql`ALTER TABLE cycling_sessions ADD COLUMN IF NOT EXISTS how_legs_feel VARCHAR(20)`;
     const rows = await sql`SELECT * FROM cycling_sessions ORDER BY date ASC`;
     return NextResponse.json(rows.map(mapRow));
   } catch (error) {

@@ -96,9 +96,12 @@ export default function CyclingPage() {
         }
         const updated = await fetch('/api/cycling').then((r) => r.json());
         setSessions(updated);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setToast('Error: ' + (err.error || res.status));
       }
-    } catch {
-      setToast('Error saving');
+    } catch (e) {
+      setToast('Error saving: ' + (e instanceof Error ? e.message : 'unknown'));
     }
     setSaving(false);
   }

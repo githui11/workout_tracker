@@ -41,6 +41,7 @@ export async function GET() {
         time VARCHAR(10) DEFAULT 'Evening',
         target_duration INT,
         actual_duration INT,
+        how_legs_feel VARCHAR(20),
         moving_time VARCHAR(20),
         resistance_level VARCHAR(20),
         avg_heart_rate INT,
