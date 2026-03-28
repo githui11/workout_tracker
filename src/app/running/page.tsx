@@ -72,7 +72,8 @@ export default function RunningPage() {
   });
 
   useEffect(() => {
-    if (currentSession && currentSession.actualDistance !== null) {
+    setLogDate(currentSession.date);
+    if (currentSession.actualDistance !== null) {
       setForm({
         actualDistance: currentSession.actualDistance?.toString() || '',
         actualPace: currentSession.actualPace || '',

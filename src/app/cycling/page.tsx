@@ -57,7 +57,8 @@ export default function CyclingPage() {
   });
 
   useEffect(() => {
-    if (currentSession && currentSession.actualDuration !== null) {
+    setLogDate(currentSession.date);
+    if (currentSession.actualDuration !== null) {
       setForm({
         actualDuration: currentSession.actualDuration?.toString() || '',
         howLegsFeel: currentSession.howLegsFeel || '',
