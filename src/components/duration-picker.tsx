@@ -119,6 +119,25 @@ export function formatDuration(totalSeconds: number): string {
   const parts: string[] = [];
   if (h) parts.push(`${h}h`);
   if (m) parts.push(`${m}m`);
-  if (s && !h) parts.push(`${s}s`); // skip seconds if hours shown
+  if (s && !h) parts.push(`${s}s`);
   return parts.join(' ');
+}
+
+/** Parse "MM:SS" or "H:MM:SS" string → total seconds */
+export function parseTimeString(t: string): number {
+  if (!t) return 0;
+  const parts = t.split(':').map(Number);
+  if (parts.some(isNaN)) return 0;
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return 0;
+}
+
+/** Total seconds → "H:MM:SS" or "MM:SS" string */
+export function secondsToTimeString(secs: number): string {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
