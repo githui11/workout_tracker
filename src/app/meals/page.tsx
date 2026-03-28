@@ -344,6 +344,7 @@ function AddFoodForm({ mealType, date, foods, onSave, onCancel }: {
   const [saving, setSaving] = useState(false);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [selectedAddOns, setSelectedAddOns] = useState<Set<string>>(new Set());
+  const [servings, setServings] = useState('1');
   const [quickForm, setQuickForm] = useState({
     foodName: '', calories: '', protein: '', carbs: '', fat: '', servings: '1', saveAsFood: false,
   });
@@ -370,6 +371,7 @@ function AddFoodForm({ mealType, date, foods, onSave, onCancel }: {
     const extraProt = addOns.reduce((s, a) => s + a.protein, 0);
     const extraCarb = addOns.reduce((s, a) => s + a.carbs, 0);
     const extraFat  = addOns.reduce((s, a) => s + a.fat, 0);
+    const qty = Math.max(0.5, Number(servings) || 1);
     const name = addOns.length > 0
       ? `${food.name} + ${addOns.map((a) => a.name).join(', ')}`
       : food.name;
@@ -378,7 +380,7 @@ function AddFoodForm({ mealType, date, foods, onSave, onCancel }: {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         date, mealType, foodId: food.id, foodName: name,
-        servings: 1,
+        servings: qty,
         calories: food.calories + extraCal,
         protein: food.protein + extraProt,
         carbs: food.carbs + extraCarb,
@@ -468,7 +470,7 @@ function AddFoodForm({ mealType, date, foods, onSave, onCancel }: {
                   {filtered.map((f) => (
                     <button
                       key={f.id}
-                      onClick={() => { setSelectedFood(f); setSearch(''); }}
+                      onClick={() => { setSelectedFood(f); setSearch(''); setServings('1'); setSelectedAddOns(new Set()); }}
                       className="w-full flex justify-between items-center px-3 py-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors text-left"
                     >
                       <div>
@@ -496,6 +498,30 @@ function AddFoodForm({ mealType, date, foods, onSave, onCancel }: {
                 <button onClick={() => { setSelectedFood(null); setSelectedAddOns(new Set()); }} className="text-zinc-600 hover:text-zinc-400 text-[10px]">
                   Change
                 </button>
+              </div>
+
+              {/* Servings */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-400">Servings</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setServings((v) => String(Math.max(0.5, (Number(v) || 1) - 0.5)))}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700/50 transition-colors font-bold"
+                  >−</button>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0.5"
+                    step="0.5"
+                    value={servings}
+                    onChange={(e) => setServings(e.target.value)}
+                    className="w-12 text-center bg-zinc-900/80 rounded-lg py-1 text-sm border border-zinc-800/60 focus:border-orange-500/50 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => setServings((v) => String((Number(v) || 1) + 0.5))}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700/50 transition-colors font-bold"
+                  >+</button>
+                </div>
               </div>
 
               {/* Add-ons */}
@@ -528,9 +554,10 @@ function AddFoodForm({ mealType, date, foods, onSave, onCancel }: {
               </div>
 
               {/* Totals preview */}
-              {selectedAddOns.size > 0 && (() => {
+              {(() => {
+                const qty = Math.max(0.5, Number(servings) || 1);
                 const addOns = ADD_ONS.filter((a) => selectedAddOns.has(a.id));
-                const total = {
+                const perServing = {
                   calories: selectedFood.calories + addOns.reduce((s, a) => s + a.calories, 0),
                   protein:  selectedFood.protein  + addOns.reduce((s, a) => s + a.protein, 0),
                   carbs:    selectedFood.carbs    + addOns.reduce((s, a) => s + a.carbs, 0),
@@ -538,8 +565,9 @@ function AddFoodForm({ mealType, date, foods, onSave, onCancel }: {
                 };
                 return (
                   <div className="text-[10px] text-zinc-500 px-1">
-                    Total: <span className="text-orange-400 font-semibold">{Math.round(total.calories)} cal</span>
-                    {' · '}{Math.round(total.protein)}p {Math.round(total.carbs)}c {Math.round(total.fat)}f
+                    Total: <span className="text-orange-400 font-semibold">{Math.round(perServing.calories * qty)} cal</span>
+                    {' · '}{Math.round(perServing.protein * qty)}p {Math.round(perServing.carbs * qty)}c {Math.round(perServing.fat * qty)}f
+                    {qty !== 1 && <span className="text-zinc-600 ml-1">({qty}x {selectedFood.servingSize})</span>}
                   </div>
                 );
               })()}
