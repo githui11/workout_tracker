@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
+import { DEFAULT_FOODS } from '@/lib/default-foods';
 
 export async function GET(request: Request) {
   try {
@@ -18,6 +19,17 @@ export async function GET(request: Request) {
       is_custom BOOLEAN DEFAULT true,
       created_at TIMESTAMP DEFAULT NOW()
     )`;
+
+    // Auto-seed on first load
+    const count = await sql`SELECT COUNT(*) AS n FROM foods`;
+    if (Number(count[0].n) === 0) {
+      for (const f of DEFAULT_FOODS) {
+        await sql`
+          INSERT INTO foods (name, brand, serving_size, calories, protein, carbs, fat, fiber)
+          VALUES (${f.name}, ${f.brand}, ${f.serving_size}, ${f.calories}, ${f.protein}, ${f.carbs}, ${f.fat}, ${f.fiber ?? null})
+        `;
+      }
+    }
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
