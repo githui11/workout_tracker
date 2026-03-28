@@ -4,7 +4,7 @@ export const DEFAULT_FOODS = [
   { name: 'Rice',                serving_size: '100g cooked',                        calories: 130, protein: 2.7,  carbs: 28.0, fat: 0.3,  fiber: 0.4,  brand: null },
   { name: 'Whole Egg',           serving_size: '1 egg (50g)',                        calories: 72,  protein: 6.0,  carbs: 0.4,  fat: 5.0,  fiber: null, brand: null },
   { name: 'Egg White',           serving_size: '1 egg white',                        calories: 17,  protein: 3.6,  carbs: 0.2,  fat: 0.1,  fiber: null, brand: null },
-  { name: 'Milk',                serving_size: '250ml',                              calories: 150, protein: 8.0,  carbs: 12.0, fat: 8.0,  fiber: null, brand: null },
+  { name: 'Milk',                serving_size: '250ml',                              calories: 155, protein: 8.3,  carbs: 11.7, fat: 8.4,  fiber: null, brand: null },
   { name: 'Beef Brawns',         serving_size: '50g',                                calories: 110, protein: 5.5,  carbs: 5.0,  fat: 7.5,  fiber: null, brand: "Farmer's Choice" },
   { name: 'Ugali',               serving_size: '100g',                               calories: 130, protein: 3.0,  carbs: 28.0, fat: 1.0,  fiber: 0.5,  brand: null },
   { name: 'Indomie',             serving_size: '1 packet (70g)',                     calories: 315, protein: 7.0,  carbs: 43.0, fat: 13.0, fiber: 1.5,  brand: 'Indomie' },
