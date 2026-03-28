@@ -15,7 +15,6 @@ function HomeIcon({ active }: { active: boolean }) {
 function RunIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-      {/* Activity pulse / heartbeat */}
       <polyline points="3 12 6 12 8 5 11 19 13.5 12 16 12" />
       <circle cx="19" cy="12" r="1.5" />
     </svg>
@@ -33,14 +32,33 @@ function CycleIcon({ active }: { active: boolean }) {
   );
 }
 
-function WeightIcon({ active }: { active: boolean }) {
+function MealsIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-      {/* Bathroom scale — rounded top with dial gauge */}
-      <ellipse cx="12" cy="16" rx="9" ry="5" />
-      <path d="M5 12a9 5 0 0114 0" />
-      <circle cx="12" cy="12" r="3" />
-      <line x1="12" y1="10.5" x2="13.5" y2="11.5" />
+      {/* Fork and knife */}
+      <path d="M3 3v6a3 3 0 003 3h0v9" />
+      <path d="M3 3h0a3 6 0 006 0" />
+      <path d="M9 3v6a3 3 0 01-3 3" />
+      <line x1="6" y1="3" x2="6" y2="9" />
+      <path d="M18 3v4a4 4 0 01-4 4h0" />
+      <path d="M18 3a1 6 0 012 0v4a4 4 0 01-4 4h0v10" />
+    </svg>
+  );
+}
+
+function MoreIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
+      {/* Grid / more dots */}
+      <circle cx="5" cy="5" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="5" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="19" r="1.5" fill="currentColor" stroke="none" />
     </svg>
   );
 }
@@ -49,7 +67,8 @@ const tabs = [
   { href: '/', label: 'Home', Icon: HomeIcon, activeColor: 'text-white' },
   { href: '/running', label: 'Run', Icon: RunIcon, activeColor: 'text-emerald-400' },
   { href: '/cycling', label: 'Cycle', Icon: CycleIcon, activeColor: 'text-blue-400' },
-  { href: '/bodyweight', label: 'Weight', Icon: WeightIcon, activeColor: 'text-purple-400' },
+  { href: '/meals', label: 'Meals', Icon: MealsIcon, activeColor: 'text-orange-400' },
+  { href: '/more', label: 'More', Icon: MoreIcon, activeColor: 'text-zinc-300' },
 ];
 
 export default function NavBar() {
@@ -57,14 +76,14 @@ export default function NavBar() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-950/70 backdrop-blur-2xl border-t border-white/[0.04]">
-      <div className="flex justify-around items-center h-[4.5rem] max-w-lg mx-auto px-3 pb-[env(safe-area-inset-bottom)]">
+      <div className="flex justify-around items-center h-[4.5rem] max-w-lg mx-auto px-1 pb-[env(safe-area-inset-bottom)]">
         {tabs.map((tab) => {
-          const active = pathname === tab.href;
+          const active = pathname === tab.href || (tab.href !== '/' && pathname.startsWith(tab.href));
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`relative flex flex-col items-center gap-0.5 px-5 py-2 rounded-2xl transition-all duration-300 ${
+              className={`relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl transition-all duration-300 ${
                 active
                   ? tab.activeColor
                   : 'text-zinc-600 hover:text-zinc-400 active:scale-95'
