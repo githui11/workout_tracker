@@ -22,7 +22,8 @@ export async function GET(request: Request) {
 
     // Seed on first load; upsert defaults whenever macros are stale
     const existing = await sql`SELECT name, calories, protein, carbs, fat, serving_size FROM foods`;
-    const dbMap = new Map(existing.map((r: { name: string; calories: number; protein: number; carbs: number; fat: number; serving_size: string }) => [r.name, r]));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dbMap = new Map(existing.map((r: any) => [r.name as string, r]));
     for (const f of DEFAULT_FOODS) {
       const row = dbMap.get(f.name);
       if (!row) {
@@ -31,10 +32,10 @@ export async function GET(request: Request) {
           VALUES (${f.name}, ${f.brand}, ${f.serving_size}, ${f.calories}, ${f.protein}, ${f.carbs}, ${f.fat}, ${f.fiber ?? null})
         `;
       } else if (
-        Number(row.calories) !== f.calories ||
-        Number(row.protein) !== f.protein ||
-        Number(row.carbs) !== f.carbs ||
-        Number(row.fat) !== f.fat ||
+        Math.round(parseFloat(row.calories)) !== f.calories ||
+        Math.abs(parseFloat(row.protein) - f.protein) > 0.05 ||
+        Math.abs(parseFloat(row.carbs)   - f.carbs)   > 0.05 ||
+        Math.abs(parseFloat(row.fat)     - f.fat)     > 0.05 ||
         row.serving_size !== f.serving_size
       ) {
         await sql`

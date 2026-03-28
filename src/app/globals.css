@@ -78,14 +78,6 @@ body::before {
   &::-webkit-scrollbar { display: none; }
 }
 
-@media (orientation: landscape) {
-  .landscape\:flex { display: flex; }
-  .landscape\:hidden { display: none; }
-}
-@media (orientation: portrait) {
-  .landscape\:flex { display: none; }
-}
-
 @utility delay-1 { animation-delay: 50ms; }
 @utility delay-2 { animation-delay: 100ms; }
 @utility delay-3 { animation-delay: 150ms; }
