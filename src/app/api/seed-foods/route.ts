@@ -29,8 +29,11 @@ const FOODS = [
 
   // Vegetables
   { name: 'Green Bell Pepper',        serving_size: '1 medium (120g)',    calories: 24,  protein: 1.0,  carbs: 5.5,  fat: 0.2,  fiber: 2.0 },
+  { name: 'Yellow Bell Pepper',       serving_size: '1 medium (120g)',    calories: 50,  protein: 1.5,  carbs: 12.0, fat: 0.3,  fiber: 2.0 },
+  { name: 'Red Bell Pepper',          serving_size: '1 medium (120g)',    calories: 37,  protein: 1.2,  carbs: 9.0,  fat: 0.3,  fiber: 2.0 },
   { name: 'Carrot',                   serving_size: '1 medium (80g)',     calories: 33,  protein: 0.7,  carbs: 7.7,  fat: 0.1,  fiber: 2.3 },
   { name: 'Zucchini',                 serving_size: '100g',               calories: 17,  protein: 1.2,  carbs: 3.1,  fat: 0.3,  fiber: 1.0 },
+  { name: 'Green Peas',               serving_size: '100g',               calories: 81,  protein: 5.4,  carbs: 14.0, fat: 0.4,  fiber: 5.1 },
 ];
 
 export async function GET() {

@@ -322,6 +322,15 @@ function MacroBar({ label, value, goal, color, unit }: {
   );
 }
 
+const ADD_ONS = [
+  { id: 'carrot',        name: 'Carrot',         serving: '1 medium', calories: 33, protein: 0.7, carbs: 7.7,  fat: 0.1 },
+  { id: 'pepper_green',  name: 'Green Pepper',   serving: '1 medium', calories: 24, protein: 1.0, carbs: 5.5,  fat: 0.2 },
+  { id: 'pepper_yellow', name: 'Yellow Pepper',  serving: '1 medium', calories: 50, protein: 1.5, carbs: 12.0, fat: 0.3 },
+  { id: 'pepper_red',    name: 'Red Pepper',     serving: '1 medium', calories: 37, protein: 1.2, carbs: 9.0,  fat: 0.3 },
+  { id: 'zucchini',      name: 'Zucchini',       serving: '100g',     calories: 17, protein: 1.2, carbs: 3.1,  fat: 0.3 },
+  { id: 'green_peas',    name: 'Green Peas',     serving: '100g',     calories: 81, protein: 5.4, carbs: 14.0, fat: 0.4 },
+];
+
 /* ─── Add Food Form ─── */
 function AddFoodForm({ mealType, date, foods, onSave, onCancel }: {
   mealType: MealType;
@@ -333,6 +342,8 @@ function AddFoodForm({ mealType, date, foods, onSave, onCancel }: {
   const [mode, setMode] = useState<'search' | 'quick'>('search');
   const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
+  const [selectedFood, setSelectedFood] = useState<Food | null>(null);
+  const [selectedAddOns, setSelectedAddOns] = useState<Set<string>>(new Set());
   const [quickForm, setQuickForm] = useState({
     foodName: '', calories: '', protein: '', carbs: '', fat: '', servings: '1', saveAsFood: false,
   });
@@ -344,15 +355,34 @@ function AddFoodForm({ mealType, date, foods, onSave, onCancel }: {
       )
     : foods.slice(0, 10);
 
+  function toggleAddOn(id: string) {
+    setSelectedAddOns((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
   async function addFromFood(food: Food) {
     setSaving(true);
+    const addOns = ADD_ONS.filter((a) => selectedAddOns.has(a.id));
+    const extraCal  = addOns.reduce((s, a) => s + a.calories, 0);
+    const extraProt = addOns.reduce((s, a) => s + a.protein, 0);
+    const extraCarb = addOns.reduce((s, a) => s + a.carbs, 0);
+    const extraFat  = addOns.reduce((s, a) => s + a.fat, 0);
+    const name = addOns.length > 0
+      ? `${food.name} + ${addOns.map((a) => a.name).join(', ')}`
+      : food.name;
     await fetch('/api/meals', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        date, mealType, foodId: food.id, foodName: food.name,
-        servings: 1, calories: food.calories, protein: food.protein,
-        carbs: food.carbs, fat: food.fat,
+        date, mealType, foodId: food.id, foodName: name,
+        servings: 1,
+        calories: food.calories + extraCal,
+        protein: food.protein + extraProt,
+        carbs: food.carbs + extraCarb,
+        fat: food.fat + extraFat,
       }),
     });
     setSaving(false);
@@ -423,35 +453,105 @@ function AddFoodForm({ mealType, date, foods, onSave, onCancel }: {
 
       {mode === 'search' && (
         <div className="space-y-2">
-          <input
-            type="text"
-            placeholder="Search foods..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-zinc-900/80 rounded-xl px-3.5 py-2 text-sm border border-zinc-800/60 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/10 focus:outline-none transition-all placeholder:text-zinc-700"
-            autoFocus
-          />
-          {filtered.length > 0 ? (
-            <div className="max-h-40 overflow-y-auto space-y-1">
-              {filtered.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => addFromFood(f)}
-                  disabled={saving}
-                  className="w-full flex justify-between items-center px-3 py-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors text-left"
-                >
-                  <div>
-                    <p className="text-xs font-medium text-zinc-300">{f.name}</p>
-                    <p className="text-[10px] text-zinc-600">{f.servingSize} · {f.protein}p {f.carbs}c {f.fat}f</p>
-                  </div>
-                  <span className="text-xs font-semibold text-orange-400">{f.calories}</span>
-                </button>
-              ))}
-            </div>
+          {!selectedFood ? (
+            <>
+              <input
+                type="text"
+                placeholder="Search foods..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-zinc-900/80 rounded-xl px-3.5 py-2 text-sm border border-zinc-800/60 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/10 focus:outline-none transition-all placeholder:text-zinc-700"
+                autoFocus
+              />
+              {filtered.length > 0 ? (
+                <div className="max-h-40 overflow-y-auto space-y-1">
+                  {filtered.map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => { setSelectedFood(f); setSearch(''); }}
+                      className="w-full flex justify-between items-center px-3 py-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors text-left"
+                    >
+                      <div>
+                        <p className="text-xs font-medium text-zinc-300">{f.name}</p>
+                        <p className="text-[10px] text-zinc-600">{f.servingSize} · {f.protein}p {f.carbs}c {f.fat}f</p>
+                      </div>
+                      <span className="text-xs font-semibold text-orange-400">{f.calories}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-zinc-600 text-center py-2">
+                  {foods.length === 0 ? 'No saved foods yet. Use Quick Add to create one.' : 'No matches found.'}
+                </p>
+              )}
+            </>
           ) : (
-            <p className="text-xs text-zinc-600 text-center py-2">
-              {foods.length === 0 ? 'No saved foods yet. Use Quick Add to create one.' : 'No matches found.'}
-            </p>
+            <div className="space-y-3">
+              {/* Selected food header */}
+              <div className="flex justify-between items-center px-3 py-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                <div>
+                  <p className="text-xs font-semibold text-orange-300">{selectedFood.name}</p>
+                  <p className="text-[10px] text-zinc-500">{selectedFood.servingSize} · {selectedFood.calories} cal</p>
+                </div>
+                <button onClick={() => { setSelectedFood(null); setSelectedAddOns(new Set()); }} className="text-zinc-600 hover:text-zinc-400 text-[10px]">
+                  Change
+                </button>
+              </div>
+
+              {/* Add-ons */}
+              <div>
+                <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Add extras (optional)</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {ADD_ONS.map((a) => {
+                    const on = selectedAddOns.has(a.id);
+                    return (
+                      <button
+                        key={a.id}
+                        onClick={() => toggleAddOn(a.id)}
+                        className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left transition-all ${
+                          on
+                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                            : 'bg-zinc-800/30 border-zinc-800/40 text-zinc-400 hover:bg-zinc-800/50'
+                        }`}
+                      >
+                        <span className={`w-3.5 h-3.5 rounded flex-shrink-0 flex items-center justify-center border ${on ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-600'}`}>
+                          {on && <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </span>
+                        <div>
+                          <p className="text-[11px] font-medium leading-tight">{a.name}</p>
+                          <p className="text-[9px] text-zinc-600">{a.serving} · {a.calories} cal</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Totals preview */}
+              {selectedAddOns.size > 0 && (() => {
+                const addOns = ADD_ONS.filter((a) => selectedAddOns.has(a.id));
+                const total = {
+                  calories: selectedFood.calories + addOns.reduce((s, a) => s + a.calories, 0),
+                  protein:  selectedFood.protein  + addOns.reduce((s, a) => s + a.protein, 0),
+                  carbs:    selectedFood.carbs    + addOns.reduce((s, a) => s + a.carbs, 0),
+                  fat:      selectedFood.fat      + addOns.reduce((s, a) => s + a.fat, 0),
+                };
+                return (
+                  <div className="text-[10px] text-zinc-500 px-1">
+                    Total: <span className="text-orange-400 font-semibold">{Math.round(total.calories)} cal</span>
+                    {' · '}{Math.round(total.protein)}p {Math.round(total.carbs)}c {Math.round(total.fat)}f
+                  </div>
+                );
+              })()}
+
+              <button
+                onClick={() => addFromFood(selectedFood)}
+                disabled={saving}
+                className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 disabled:from-orange-600/50 disabled:to-orange-500/50 text-white py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.98]"
+              >
+                {saving ? 'Adding...' : 'Add to Meal'}
+              </button>
+            </div>
           )}
         </div>
       )}
