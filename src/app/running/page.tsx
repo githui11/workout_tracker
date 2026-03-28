@@ -265,9 +265,10 @@ export default function RunningPage() {
                     <option value="">--</option>
                     <option value="1">1 - Wrecked</option>
                     <option value="2">2 - Sore</option>
-                    <option value="3">3 - OK</option>
-                    <option value="4">4 - Good</option>
-                    <option value="5">5 - Fresh</option>
+                    <option value="3">3 - Tired</option>
+                    <option value="4">4 - OK</option>
+                    <option value="5">5 - Good</option>
+                    <option value="6">6 - Fresh</option>
                   </select>
                 </div>
               </div>
@@ -349,7 +350,7 @@ export default function RunningPage() {
                   {s.actualPace && <span>{s.actualPace} /km</span>}
                   {s.duration && <span>{s.duration} min</span>}
                   {s.elevationGain && <span>+{s.elevationGain}m</span>}
-                  {s.howLegsFeel && <span>Legs {s.howLegsFeel}/5</span>}
+                  {s.howLegsFeel && <span>Legs {s.howLegsFeel}/6</span>}
                 </div>
                 {s.notes && <p className="text-xs text-zinc-600 mt-2 leading-relaxed">{s.notes}</p>}
               </div>

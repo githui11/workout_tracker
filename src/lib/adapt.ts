@@ -43,9 +43,10 @@ function analyzeRunning(sessions: RunningSession[], currentWeek: number): Adapta
       const lower = s.howLegsFeel.toLowerCase();
       if (lower.includes('terrible') || lower.includes('awful')) return 1;
       if (lower.includes('sore') || lower.includes('bad')) return 2;
-      if (lower.includes('ok') || lower.includes('decent')) return 3;
-      if (lower.includes('good') || lower.includes('fine')) return 4;
-      if (lower.includes('great') || lower.includes('fresh')) return 5;
+      if (lower.includes('tired')) return 3;
+      if (lower.includes('ok') || lower.includes('decent')) return 4;
+      if (lower.includes('good') || lower.includes('fine')) return 5;
+      if (lower.includes('great') || lower.includes('fresh')) return 6;
       return null;
     })
     .filter((n): n is number => n !== null);
@@ -56,7 +57,7 @@ function analyzeRunning(sessions: RunningSession[], currentWeek: number): Adapta
       adaptations.push({
         type: 'reduce_volume',
         category: 'running',
-        message: `Your legs have been consistently sore (avg ${avgFeel.toFixed(1)}/5). Reducing next week's distances by 15%.`,
+        message: `Your legs have been consistently sore (avg ${avgFeel.toFixed(1)}/6). Reducing next week's distances by 15%.`,
         severity: 'warning',
       });
     }
@@ -85,7 +86,7 @@ function analyzeRunning(sessions: RunningSession[], currentWeek: number): Adapta
     const lastWeekSessionsForPace = sessions.filter((s) => s.week === currentWeek - 1);
     const lastWeekCompletedForPace = lastWeekSessionsForPace.filter((s) => s.actualDistance !== null);
     const noMissedLastWeek = lastWeekSessionsForPace.length === 0 || lastWeekCompletedForPace.length >= lastWeekSessionsForPace.length;
-    if (allFast && legFeelScores.length > 0 && legFeelScores.every((s) => s >= 4) && noMissedLastWeek) {
+    if (allFast && legFeelScores.length > 0 && legFeelScores.every((s) => s >= 5) && noMissedLastWeek) {
       adaptations.push({
         type: 'increase_volume',
         category: 'running',
@@ -132,7 +133,7 @@ function analyzeCycling(sessions: CyclingSession[], currentWeek: number): Adapta
       adaptations.push({
         type: 'reduce_volume',
         category: 'cycling',
-        message: `Your legs have been consistently sore on the bike (avg ${avgFeel.toFixed(1)}/5). Reducing next session's duration by 10%.`,
+        message: `Your legs have been consistently sore on the bike (avg ${avgFeel.toFixed(1)}/6). Reducing next session's duration by 10%.`,
         severity: 'warning',
       });
     }
@@ -154,7 +155,7 @@ function analyzeCycling(sessions: CyclingSession[], currentWeek: number): Adapta
   if (recentCompleted.length >= 2) {
     const allOverTarget = recentCompleted.every((s) => (s.actualDuration || 0) > s.targetDuration * 1.15);
     const noMissedLastWeek = lastWeekSessions.length === 0 || lastWeekCompleted.length >= lastWeekSessions.length;
-    const legsGood = legFeelScores.length === 0 || legFeelScores.every((s) => s >= 4);
+    const legsGood = legFeelScores.length === 0 || legFeelScores.every((s) => s >= 5);
     if (allOverTarget && noMissedLastWeek && legsGood) {
       adaptations.push({
         type: 'increase_volume',
