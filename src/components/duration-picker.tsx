@@ -2,8 +2,8 @@
 
 import { useRef, useEffect, useCallback } from 'react';
 
-const ITEM_H = 48; // px per row
-const VISIBLE = 5; // rows shown
+const ITEM_H = 36; // px per row
+const VISIBLE = 3; // rows shown
 
 interface Props {
   value: number; // total seconds
@@ -45,7 +45,7 @@ function Column({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="relative" style={{ height: ITEM_H * VISIBLE, width: 64 }}>
+      <div className="relative" style={{ height: ITEM_H * VISIBLE, width: 52 }}>
         {/* Selection band */}
         <div
           className="absolute inset-x-0 pointer-events-none border-y border-zinc-600/40 bg-zinc-700/20 rounded-lg z-10"
@@ -77,10 +77,8 @@ function Column({
               style={{ height: ITEM_H, scrollSnapAlign: 'center' }}
               className={`flex items-center justify-center font-mono font-semibold transition-all duration-100 select-none ${
                 v === selected
-                  ? 'text-white text-2xl'
-                  : Math.abs(v - selected) === 1
-                  ? 'text-zinc-500 text-xl'
-                  : 'text-zinc-700 text-lg'
+                  ? 'text-white text-xl'
+                  : 'text-zinc-600 text-base'
               }`}
             >
               {String(v).padStart(2, '0')}

@@ -283,7 +283,15 @@ export default function RunningPage() {
                   </select>
                 </div>
               </div>
-              <Input label="Notes" value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} accent="emerald" />
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Notes</label>
+                <textarea
+                  rows={3}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  className={`w-full bg-zinc-900/80 rounded-xl px-3.5 py-2.5 text-sm border ${form.notes ? 'border-zinc-700' : 'border-zinc-800/60'} focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all placeholder:text-zinc-700 resize-none`}
+                />
+              </div>
             </div>
 
             <button
