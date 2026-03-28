@@ -108,8 +108,8 @@ export default function CyclingPage() {
     actual: s.actualDuration,
     target: s.targetDuration,
   })), [completedSessions]);
-  const maxDuration = useMemo(() => completedSessions.reduce((max, s) => Math.max(max, s.actualDuration || 0), 0), [completedSessions]);
-  const goalProgress = useMemo(() => Math.min(100, Math.round((maxDuration / 180) * 100)), [maxDuration]);
+  const totalDuration = useMemo(() => completedSessions.reduce((sum, s) => sum + (s.actualDuration || 0), 0), [completedSessions]);
+  const goalProgress = useMemo(() => Math.min(100, Math.round((totalDuration / 180) * 100)), [totalDuration]);
 
   if (loading) {
     return (
@@ -133,7 +133,7 @@ export default function CyclingPage() {
             <div>
               <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Goal Progress</p>
               <p className="text-xl font-bold text-blue-400 mt-0.5">
-                {maxDuration}<span className="text-sm font-medium text-zinc-500 ml-1">/ 180 min</span>
+                {totalDuration}<span className="text-sm font-medium text-zinc-500 ml-1">/ 180 min</span>
               </p>
             </div>
             <span className="text-2xl font-bold text-zinc-800">{goalProgress}%</span>
