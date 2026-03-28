@@ -92,6 +92,9 @@ export default function CyclingPage() {
         }
         const updated = await fetch('/api/cycling').then((r) => r.json());
         setSessions(updated);
+        setDurationSeconds(0);
+        setForm({ howLegsFeel: '', notes: '' });
+        setLogDate(new Date().toISOString().split('T')[0]);
       } else {
         const err = await res.json().catch(() => ({}));
         setToast('Error: ' + (err.error || res.status));

@@ -124,6 +124,8 @@ export default function RunningPage() {
         }
         const updated = await fetch('/api/running').then((r) => r.json());
         setSessions(updated);
+        setForm({ actualDistance: '', actualPace: '', duration: '', movingTime: '', elevationGain: '', maxElevation: '', warmupDone: '', howLegsFeel: '', notes: '' });
+        setLogDate(new Date().toISOString().split('T')[0]);
       } else {
         const err = await res.json().catch(() => ({}));
         setToast('Error: ' + (err.error || res.status));
