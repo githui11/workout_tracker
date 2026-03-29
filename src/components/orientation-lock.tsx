@@ -9,7 +9,8 @@ export default function OrientationLock() {
     // Screen Orientation API — works on Android Chrome in fullscreen/standalone PWA
     const lockOrientation = () => {
       try {
-        screen?.orientation?.lock?.('portrait').catch(() => {});
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (screen?.orientation as any)?.lock?.('portrait').catch(() => {});
       } catch {}
     };
     lockOrientation();
