@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
-import { buildWeeklySummary, getCurrentWeek } from '@/lib/aggregations';
+import { buildWeeklySummary, getCurrentWeek, getWeekDates } from '@/lib/aggregations';
 import type { RunningSession, CyclingSession } from '@/lib/types';
 
 export async function GET(request: Request) {
@@ -10,9 +10,10 @@ export async function GET(request: Request) {
     const weekParam = searchParams.get('week');
     const week = weekParam ? parseInt(weekParam) : getCurrentWeek();
 
+    const { start, end } = getWeekDates(week);
     const [runningRows, cyclingRows] = await Promise.all([
-      sql`SELECT * FROM running_sessions WHERE week = ${week} ORDER BY date ASC`,
-      sql`SELECT * FROM cycling_sessions WHERE week = ${week} ORDER BY date ASC`,
+      sql`SELECT * FROM running_sessions WHERE date BETWEEN ${start} AND ${end} ORDER BY date ASC`,
+      sql`SELECT * FROM cycling_sessions WHERE date BETWEEN ${start} AND ${end} ORDER BY date ASC`,
     ]);
 
     const running: RunningSession[] = runningRows.map((r) => ({

@@ -8,7 +8,7 @@ export function getDayName(date: string): string {
 }
 
 export function getWeekForDate(date: string): number {
-  const PLAN_START = new Date('2026-03-24');
+  const PLAN_START = new Date('2026-03-23');
   const d = new Date(date + 'T00:00:00');
   const diff = d.getTime() - PLAN_START.getTime();
   return Math.max(1, Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1);

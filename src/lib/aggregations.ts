@@ -17,6 +17,17 @@ export function getWeekDateRange(week: number): string {
   return `${fmt(start)} - ${fmt(end)}`;
 }
 
+export function getWeekDates(week: number): { start: string; end: string } {
+  const start = new Date(PLAN_START);
+  start.setDate(start.getDate() + (week - 1) * 7);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  return {
+    start: start.toISOString().split('T')[0],
+    end: end.toISOString().split('T')[0],
+  };
+}
+
 function parsePace(pace: string | null): number | null {
   if (!pace) return null;
   const match = pace.match(/(\d+):(\d+)/);
@@ -35,28 +46,25 @@ export function buildWeeklySummary(
   cycling: CyclingSession[],
   week: number
 ): WeeklySummary {
-  const weekRunning = running.filter((s) => s.week === week);
-  const weekCycling = cycling.filter((s) => s.week === week);
-
-  const completedRuns = weekRunning.filter((s) => s.actualDistance !== null);
+  const completedRuns = running.filter((s) => s.actualDistance !== null);
   const totalKm = completedRuns.reduce((sum, s) => sum + (s.actualDistance || 0), 0);
   const paces = completedRuns.map((s) => parsePace(s.actualPace)).filter((p): p is number => p !== null);
   const avgPace = paces.length > 0 ? formatPace(paces.reduce((a, b) => a + b, 0) / paces.length) : null;
 
-  const completedCycling = weekCycling.filter((s) => s.actualDuration !== null);
+  const completedCycling = cycling.filter((s) => s.actualDuration !== null);
   const totalMin = completedCycling.reduce((sum, s) => sum + (s.actualDuration || 0), 0);
 
   return {
     week,
     dateRange: getWeekDateRange(week),
     running: {
-      sessionsPlanned: weekRunning.length,
+      sessionsPlanned: running.length,
       sessionsCompleted: completedRuns.length,
       totalKm: Math.round(totalKm * 10) / 10,
       avgPace,
     },
     cycling: {
-      sessionsPlanned: weekCycling.length,
+      sessionsPlanned: cycling.length,
       sessionsCompleted: completedCycling.length,
       totalMinutes: totalMin,
     },
