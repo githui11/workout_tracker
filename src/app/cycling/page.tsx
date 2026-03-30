@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { CyclingSession, Adaptation } from '@/lib/types';
 import dynamic from 'next/dynamic';
 import DurationPicker, { formatDuration } from '@/components/duration-picker';
@@ -14,11 +14,18 @@ const ProgressChart = dynamic(() => import('@/components/progress-chart'), {
 
 type Tab = 'log' | 'history' | 'charts';
 
+const PLAN_START = new Date('2026-03-23').getTime();
+
+function getCurrentWeek() {
+  return Math.max(1, Math.floor((Date.now() - PLAN_START) / (7 * 24 * 60 * 60 * 1000)) + 1);
+}
+
 export default function CyclingPage() {
   const [sessions, setSessions] = useState<CyclingSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('log');
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [toast, setToast] = useState('');
   const [adaptations, setAdaptations] = useState<Adaptation[]>([]);
 
@@ -31,16 +38,13 @@ export default function CyclingPage() {
   }, []);
 
   const today = new Date().toISOString().split('T')[0];
-  const todayDow = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-  // Find earliest unlogged session — skipped sessions get served next
   const earliestUnlogged = sessions.find((s) => s.actualDuration === null);
   const todaySession = sessions.find((s) => s.date === today && s.actualDuration !== null);
   const plannedSession = todaySession || earliestUnlogged;
   const isAdHoc = !plannedSession;
-  const isCarryOver = plannedSession && plannedSession.date < today && plannedSession.actualDuration === null;
   const currentSession = plannedSession || {
     date: today,
-    day: todayDow,
+    day: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
     week: 0,
     time: 'Ad-hoc',
     targetDuration: 0,
@@ -49,27 +53,10 @@ export default function CyclingPage() {
     notes: '',
   } as CyclingSession;
 
-  const [logDate, setLogDate] = useState(currentSession.date);
-
+  const [logDate, setLogDate] = useState(today);
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [form, setForm] = useState({ howLegsFeel: '', notes: '' });
   const [editingOriginalDate, setEditingOriginalDate] = useState<string | null>(null);
-  const justSaved = useRef(false);
-
-  useEffect(() => {
-    if (justSaved.current) {
-      justSaved.current = false;
-      return;
-    }
-    setLogDate(currentSession.date);
-    if (currentSession.actualDuration !== null) {
-      setDurationSeconds((currentSession.actualDuration ?? 0) * 60);
-      setForm({
-        howLegsFeel: currentSession.howLegsFeel || '',
-        notes: currentSession.notes || '',
-      });
-    }
-  }, [currentSession]);
 
   function handleEdit(s: CyclingSession) {
     setEditingOriginalDate(s.date);
@@ -77,6 +64,31 @@ export default function CyclingPage() {
     setDurationSeconds((s.actualDuration ?? 0) * 60);
     setForm({ howLegsFeel: s.howLegsFeel || '', notes: s.notes || '' });
     setTab('log');
+  }
+
+  function handleCancelEdit() {
+    setEditingOriginalDate(null);
+    setLogDate(today);
+    setDurationSeconds(0);
+    setForm({ howLegsFeel: '', notes: '' });
+  }
+
+  async function handleDelete() {
+    if (!editingOriginalDate) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/cycling?date=${editingOriginalDate}`, { method: 'DELETE' });
+      if (res.ok) {
+        setToast('Deleted');
+        setTimeout(() => setToast(''), 2000);
+        const updated = await fetch('/api/cycling').then((r) => r.json());
+        setSessions(updated);
+        handleCancelEdit();
+      }
+    } catch (e) {
+      setToast('Error deleting: ' + (e instanceof Error ? e.message : 'unknown'));
+    }
+    setDeleting(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -96,13 +108,12 @@ export default function CyclingPage() {
         if (data.adaptations?.length > 0) {
           setAdaptations(data.adaptations);
         }
-        justSaved.current = true;
         const updated = await fetch('/api/cycling').then((r) => r.json());
         setSessions(updated);
         setDurationSeconds(0);
         setForm({ howLegsFeel: '', notes: '' });
         setEditingOriginalDate(null);
-        setLogDate(new Date().toISOString().split('T')[0]);
+        setLogDate(today);
       } else {
         const err = await res.json().catch(() => ({}));
         setToast('Error: ' + (err.error || res.status));
@@ -114,13 +125,19 @@ export default function CyclingPage() {
   }
 
   const completedSessions = useMemo(() => sessions.filter((s) => s.actualDuration !== null), [sessions]);
+  const currentWeek = getCurrentWeek();
+  const currentWeekCompleted = useMemo(() => completedSessions.filter((s) => s.week === currentWeek), [completedSessions, currentWeek]);
   const durationData = useMemo(() => completedSessions.map((s) => ({
     label: s.date.slice(5),
     actual: s.actualDuration,
     target: s.targetDuration,
   })), [completedSessions]);
-  const totalDuration = useMemo(() => completedSessions.reduce((sum, s) => sum + (s.actualDuration || 0), 0), [completedSessions]);
-  const goalProgress = useMemo(() => Math.min(100, Math.round((totalDuration / 180) * 100)), [totalDuration]);
+  const totalDuration = useMemo(() => currentWeekCompleted.reduce((sum, s) => sum + (s.actualDuration || 0), 0), [currentWeekCompleted]);
+  const weeklyGoal = useMemo(() => {
+    const weekSessions = sessions.filter((s) => s.week === currentWeek);
+    return weekSessions.reduce((sum, s) => sum + (s.targetDuration || 0), 0);
+  }, [sessions, currentWeek]);
+  const goalProgress = useMemo(() => weeklyGoal > 0 ? Math.min(100, Math.round((totalDuration / weeklyGoal) * 100)) : 0, [totalDuration, weeklyGoal]);
 
   if (loading) {
     return (
@@ -142,9 +159,9 @@ export default function CyclingPage() {
         <div className="mt-2 bg-zinc-900/50 backdrop-blur-sm rounded-2xl p-3.5 border border-zinc-800/30">
           <div className="flex justify-between items-end mb-2">
             <div>
-              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Goal Progress</p>
+              <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Week {currentWeek} Progress</p>
               <p className="text-xl font-bold text-blue-400 mt-0.5">
-                {totalDuration}<span className="text-sm font-medium text-zinc-500 ml-1">/ 180 min</span>
+                {totalDuration}<span className="text-sm font-medium text-zinc-500 ml-1">/ {weeklyGoal} min</span>
               </p>
             </div>
             <span className="text-2xl font-bold text-zinc-800">{goalProgress}%</span>
@@ -179,9 +196,15 @@ export default function CyclingPage() {
         <div className="animate-fadeInUp delay-2">
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="bg-zinc-900/50 backdrop-blur-sm rounded-2xl p-4 space-y-2.5 border border-zinc-800/30">
-              {isAdHoc && (
+              {isAdHoc && !editingOriginalDate && (
                 <div className="text-xs font-semibold text-amber-400 bg-amber-500/[0.06] rounded-lg px-3 py-1.5 mb-2 text-center border border-amber-500/15">
                   Ad-hoc session
+                </div>
+              )}
+              {editingOriginalDate && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-blue-400">Editing session</span>
+                  <button type="button" onClick={handleCancelEdit} className="text-xs text-zinc-500 hover:text-zinc-300">Cancel</button>
                 </div>
               )}
               <div className="flex justify-between items-center text-sm">
@@ -194,7 +217,7 @@ export default function CyclingPage() {
                   className="bg-transparent text-right font-medium focus:outline-none text-white"
                 />
               </div>
-              {!isAdHoc && (
+              {!isAdHoc && !editingOriginalDate && (
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-500">Target</span>
                   <span className="font-semibold text-blue-400">{currentSession.targetDuration} min</span>
@@ -250,9 +273,20 @@ export default function CyclingPage() {
               ) : 'Save Session'}
             </button>
 
+            {editingOriginalDate && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] border border-red-500/20"
+              >
+                {deleting ? 'Deleting...' : 'Delete Session'}
+              </button>
+            )}
+
             {toast && (
               <div className={`text-center text-sm font-semibold animate-slideInUp ${
-                toast === 'Saved!' ? 'text-emerald-400' : 'text-red-400'
+                toast === 'Saved!' ? 'text-emerald-400' : toast === 'Deleted' ? 'text-zinc-400' : 'text-red-400'
               }`}>
                 {toast === 'Saved!' && '✓ '}{toast}
               </div>

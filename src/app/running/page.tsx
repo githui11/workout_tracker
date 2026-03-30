@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { RunningSession, Adaptation } from '@/lib/types';
 import DurationPicker, { parseTimeString, secondsToTimeString } from '@/components/duration-picker';
 import dynamic from 'next/dynamic';
@@ -19,6 +19,7 @@ export default function RunningPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('log');
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [toast, setToast] = useState('');
   const [adaptations, setAdaptations] = useState<Adaptation[]>([]);
 
@@ -32,12 +33,10 @@ export default function RunningPage() {
 
   const today = new Date().toISOString().split('T')[0];
   const todayDow = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-  // Find earliest unlogged session — if you skipped Wednesday, you do Wednesday's workout next
   const earliestUnlogged = sessions.find((s) => s.actualDistance === null);
   const todaySession = sessions.find((s) => s.date === today && s.actualDistance !== null);
   const plannedSession = todaySession || earliestUnlogged;
   const isAdHoc = !plannedSession;
-  const isCarryOver = plannedSession && plannedSession.date < today && plannedSession.actualDistance === null;
   const currentSession = plannedSession || {
     date: today,
     day: todayDow,
@@ -58,8 +57,7 @@ export default function RunningPage() {
     notes: '',
   } as RunningSession;
 
-  const [logDate, setLogDate] = useState(currentSession.date);
-
+  const [logDate, setLogDate] = useState(today);
   const [form, setForm] = useState({
     actualDistance: '',
     actualPace: '',
@@ -71,30 +69,7 @@ export default function RunningPage() {
     howLegsFeel: '',
     notes: '',
   });
-
   const [editingOriginalDate, setEditingOriginalDate] = useState<string | null>(null);
-  const justSaved = useRef(false);
-
-  useEffect(() => {
-    if (justSaved.current) {
-      justSaved.current = false;
-      return;
-    }
-    setLogDate(currentSession.date);
-    if (currentSession.actualDistance !== null) {
-      setForm({
-        actualDistance: currentSession.actualDistance?.toString() || '',
-        actualPace: currentSession.actualPace || '',
-        duration: currentSession.duration?.toString() || '',
-        movingTime: currentSession.movingTime || '',
-        elevationGain: currentSession.elevationGain?.toString() || '',
-        maxElevation: currentSession.maxElevation?.toString() || '',
-        warmupDone: currentSession.warmupDone || '',
-        howLegsFeel: currentSession.howLegsFeel || '',
-        notes: currentSession.notes || '',
-      });
-    }
-  }, [currentSession]);
 
   function handleEdit(s: RunningSession) {
     setEditingOriginalDate(s.date);
@@ -111,6 +86,30 @@ export default function RunningPage() {
       notes: s.notes || '',
     });
     setTab('log');
+  }
+
+  function handleCancelEdit() {
+    setEditingOriginalDate(null);
+    setLogDate(today);
+    setForm({ actualDistance: '', actualPace: '', duration: '', movingTime: '', elevationGain: '', maxElevation: '', warmupDone: '', howLegsFeel: '', notes: '' });
+  }
+
+  async function handleDelete() {
+    if (!editingOriginalDate) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/running?date=${editingOriginalDate}`, { method: 'DELETE' });
+      if (res.ok) {
+        setToast('Deleted');
+        setTimeout(() => setToast(''), 2000);
+        const updated = await fetch('/api/running').then((r) => r.json());
+        setSessions(updated);
+        handleCancelEdit();
+      }
+    } catch (e) {
+      setToast('Error deleting: ' + (e instanceof Error ? e.message : 'unknown'));
+    }
+    setDeleting(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -130,12 +129,11 @@ export default function RunningPage() {
         if (data.adaptations?.length > 0) {
           setAdaptations(data.adaptations);
         }
-        justSaved.current = true;
         const updated = await fetch('/api/running').then((r) => r.json());
         setSessions(updated);
         setForm({ actualDistance: '', actualPace: '', duration: '', movingTime: '', elevationGain: '', maxElevation: '', warmupDone: '', howLegsFeel: '', notes: '' });
         setEditingOriginalDate(null);
-        setLogDate(new Date().toISOString().split('T')[0]);
+        setLogDate(today);
       } else {
         const err = await res.json().catch(() => ({}));
         setToast('Error: ' + (err.error || res.status));
@@ -199,9 +197,15 @@ export default function RunningPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Session info card */}
             <div className="bg-zinc-900/50 backdrop-blur-sm rounded-2xl p-4 space-y-2.5 border border-zinc-800/30">
-              {isAdHoc && (
+              {isAdHoc && !editingOriginalDate && (
                 <div className="text-xs font-semibold text-amber-400 bg-amber-500/[0.06] rounded-lg px-3 py-1.5 mb-2 text-center border border-amber-500/15">
                   Ad-hoc session
+                </div>
+              )}
+              {editingOriginalDate && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-emerald-400">Editing session</span>
+                  <button type="button" onClick={handleCancelEdit} className="text-xs text-zinc-500 hover:text-zinc-300">Cancel</button>
                 </div>
               )}
               <div className="flex justify-between items-center text-sm">
@@ -214,7 +218,7 @@ export default function RunningPage() {
                   className="bg-transparent text-right font-medium focus:outline-none text-white"
                 />
               </div>
-              {!isAdHoc && (
+              {!isAdHoc && !editingOriginalDate && (
                 <>
                   <div className="flex justify-between text-sm">
                     <span className="text-zinc-500">Phase</span>
@@ -314,9 +318,20 @@ export default function RunningPage() {
               ) : 'Save Session'}
             </button>
 
+            {editingOriginalDate && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 py-3 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] border border-red-500/20"
+              >
+                {deleting ? 'Deleting...' : 'Delete Session'}
+              </button>
+            )}
+
             {toast && (
               <div className={`text-center text-sm font-semibold animate-slideInUp ${
-                toast === 'Saved!' ? 'text-emerald-400' : 'text-red-400'
+                toast === 'Saved!' ? 'text-emerald-400' : toast === 'Deleted' ? 'text-zinc-400' : 'text-red-400'
               }`}>
                 {toast === 'Saved!' && '✓ '}{toast}
               </div>
