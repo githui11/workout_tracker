@@ -217,9 +217,15 @@ export default function RunningPage() {
                 />
               </div>
               {!isAdHoc && !editingOriginalDate && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500">Target</span>
-                  <span className="font-medium">{currentSession.targetDistance} km @ {currentSession.targetPace}</span>
+                <div className="flex items-center gap-2 pt-0.5">
+                  <span className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-lg">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 12 6 12 8 5 11 19 13.5 12 16 12"/><circle cx="19" cy="12" r="1.5"/></svg>
+                    {currentSession.targetDistance} km
+                  </span>
+                  <span className="flex items-center gap-1.5 bg-zinc-800/60 border border-zinc-700/40 text-zinc-300 text-xs font-semibold px-2.5 py-1 rounded-lg">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+                    {currentSession.targetPace}
+                  </span>
                 </div>
               )}
             </div>
