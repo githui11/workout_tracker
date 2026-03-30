@@ -53,6 +53,7 @@ export default function CyclingPage() {
 
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [form, setForm] = useState({ howLegsFeel: '', notes: '' });
+  const [editingOriginalDate, setEditingOriginalDate] = useState<string | null>(null);
 
   useEffect(() => {
     setLogDate(currentSession.date);
@@ -67,6 +68,7 @@ export default function CyclingPage() {
   }, [currentSession]);
 
   function handleEdit(s: CyclingSession) {
+    setEditingOriginalDate(s.date);
     setLogDate(s.date);
     setDurationSeconds((s.actualDuration ?? 0) * 60);
     setForm({ howLegsFeel: s.howLegsFeel || '', notes: s.notes || '' });
@@ -81,7 +83,7 @@ export default function CyclingPage() {
       const res = await fetch('/api/cycling', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: logDate, actualDuration: Math.round(durationSeconds / 60), ...form }),
+        body: JSON.stringify({ date: logDate, originalDate: editingOriginalDate, actualDuration: Math.round(durationSeconds / 60), ...form }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -94,6 +96,7 @@ export default function CyclingPage() {
         setSessions(updated);
         setDurationSeconds(0);
         setForm({ howLegsFeel: '', notes: '' });
+        setEditingOriginalDate(null);
         setLogDate(new Date().toISOString().split('T')[0]);
       } else {
         const err = await res.json().catch(() => ({}));

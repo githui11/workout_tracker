@@ -53,14 +53,17 @@ export async function POST(request: Request) {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     const body = await request.json();
-    const { date, actualDuration, howLegsFeel, notes } = body;
+    const { date, originalDate, actualDuration, howLegsFeel, notes } = body;
+    const lookupDate = originalDate || date;
 
     const result = await sql`
       UPDATE cycling_sessions SET
+        date = ${date},
+        day = ${getDayName(date)},
         actual_duration = ${actualDuration || null},
         how_legs_feel = ${howLegsFeel || null},
         notes = ${notes || null}
-      WHERE date = ${date}
+      WHERE date = ${lookupDate}
       RETURNING id`;
 
     if (result.length === 0) {

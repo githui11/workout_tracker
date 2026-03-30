@@ -89,7 +89,10 @@ export default function RunningPage() {
     }
   }, [currentSession]);
 
+  const [editingOriginalDate, setEditingOriginalDate] = useState<string | null>(null);
+
   function handleEdit(s: RunningSession) {
+    setEditingOriginalDate(s.date);
     setLogDate(s.date);
     setForm({
       actualDistance: s.actualDistance?.toString() || '',
@@ -113,7 +116,7 @@ export default function RunningPage() {
       const res = await fetch('/api/running', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: logDate, ...form }),
+        body: JSON.stringify({ date: logDate, originalDate: editingOriginalDate, ...form }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -125,6 +128,7 @@ export default function RunningPage() {
         const updated = await fetch('/api/running').then((r) => r.json());
         setSessions(updated);
         setForm({ actualDistance: '', actualPace: '', duration: '', movingTime: '', elevationGain: '', maxElevation: '', warmupDone: '', howLegsFeel: '', notes: '' });
+        setEditingOriginalDate(null);
         setLogDate(new Date().toISOString().split('T')[0]);
       } else {
         const err = await res.json().catch(() => ({}));

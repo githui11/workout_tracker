@@ -61,11 +61,14 @@ export async function POST(request: Request) {
   try {
     const sql = neon(process.env.DATABASE_URL!);
     const body = await request.json();
-    const { date, actualDistance, actualPace, duration, movingTime, elevationGain, maxElevation, warmupDone, howLegsFeel, notes } = body;
+    const { date, originalDate, actualDistance, actualPace, duration, movingTime, elevationGain, maxElevation, warmupDone, howLegsFeel, notes } = body;
+    const lookupDate = originalDate || date;
 
     // Try UPDATE first
     const result = await sql`
       UPDATE running_sessions SET
+        date = ${date},
+        day = ${getDayName(date)},
         actual_distance = ${actualDistance || null},
         actual_pace = ${actualPace || null},
         duration = ${duration || null},
@@ -75,7 +78,7 @@ export async function POST(request: Request) {
         warmup_done = ${warmupDone || null},
         how_legs_feel = ${howLegsFeel || null},
         notes = ${notes || null}
-      WHERE date = ${date}
+      WHERE date = ${lookupDate}
       RETURNING id`;
 
     // If no existing row, INSERT an ad-hoc session
