@@ -193,27 +193,35 @@ export default function RunningPage() {
       {tab === 'log' && (
         <div className="animate-fadeInUp delay-2">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Top bar: date + target + edit state */}
-            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl px-4 py-3.5 border border-zinc-800/30 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-3">
-                {editingOriginalDate ? (
-                  <>
-                    <span className="text-xs font-semibold text-emerald-400">Editing</span>
-                    <button type="button" onClick={handleCancelEdit} className="text-xs text-zinc-500 hover:text-zinc-300">Cancel</button>
-                  </>
-                ) : isAdHoc ? (
-                  <span className="text-xs font-semibold text-amber-400">Ad-hoc</span>
-                ) : (
-                  <span className="text-xs text-zinc-500">{currentSession.targetDistance} km @ {currentSession.targetPace}</span>
-                )}
+            {/* Session info card */}
+            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-2xl p-4 space-y-2.5 border border-zinc-800/30">
+              {isAdHoc && !editingOriginalDate && (
+                <div className="text-xs font-semibold text-amber-400 bg-amber-500/[0.06] rounded-lg px-3 py-1.5 mb-2 text-center border border-amber-500/15">
+                  Ad-hoc session
+                </div>
+              )}
+              {editingOriginalDate && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-semibold text-emerald-400">Editing session</span>
+                  <button type="button" onClick={handleCancelEdit} className="text-xs text-zinc-500 hover:text-zinc-300">Cancel</button>
+                </div>
+              )}
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-zinc-500">Date</span>
+                <input
+                  type="date"
+                  max={today}
+                  value={logDate}
+                  onChange={(e) => setLogDate(e.target.value)}
+                  className="bg-transparent text-right font-medium focus:outline-none text-white"
+                />
               </div>
-              <input
-                type="date"
-                max={today}
-                value={logDate}
-                onChange={(e) => setLogDate(e.target.value)}
-                className="bg-transparent text-right text-sm font-medium focus:outline-none text-white"
-              />
+              {!isAdHoc && !editingOriginalDate && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-500">Target</span>
+                  <span className="font-medium">{currentSession.targetDistance} km @ {currentSession.targetPace}</span>
+                </div>
+              )}
             </div>
 
             {/* All fields in one card */}
