@@ -5,15 +5,21 @@ interface Props {
   onChange: (seconds: number) => void;
 }
 
-/** Simple text input for duration. Type H:MM:SS or MM:SS. */
+/** Simple text input for duration in minutes. */
 export default function DurationPicker({ value, onChange }: Props) {
+  const minutes = value ? Math.round(value / 60) : '';
   return (
     <input
       type="text"
       inputMode="numeric"
-      value={secondsToTimeString(value)}
-      onChange={(e) => onChange(parseTimeString(e.target.value))}
-      placeholder="MM:SS"
+      value={minutes}
+      onChange={(e) => {
+        const raw = e.target.value;
+        if (raw === '') { onChange(0); return; }
+        const n = Number(raw);
+        if (!isNaN(n)) onChange(Math.round(n * 60));
+      }}
+      placeholder="Minutes"
       className="w-full bg-zinc-900/80 rounded-xl px-3.5 py-2.5 text-sm font-mono border border-zinc-800/60 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 focus:outline-none transition-all placeholder:text-zinc-700 text-center"
     />
   );
