@@ -171,7 +171,7 @@ export default function RunningPage() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <h1 className="text-2xl font-bold tracking-tight animate-fadeInUp">Running</h1>
 
       {/* Tab switcher */}
@@ -194,9 +194,9 @@ export default function RunningPage() {
       {/* LOG TAB */}
       {tab === 'log' && (
         <div className="animate-fadeInUp delay-2">
-          <form onSubmit={handleSubmit} className="space-y-2">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {/* Top bar: date + target + edit state */}
-            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl px-3 py-2 border border-zinc-800/30 flex items-center justify-between gap-2">
+            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl px-4 py-3 border border-zinc-800/30 flex items-center justify-between gap-2">
               <div className="flex items-center gap-3">
                 {editingOriginalDate ? (
                   <>
@@ -219,9 +219,9 @@ export default function RunningPage() {
             </div>
 
             {/* All fields in one card */}
-            <div className="bg-zinc-900/40 rounded-xl border border-zinc-800/30 p-3 space-y-2">
+            <div className="bg-zinc-900/40 rounded-xl border border-zinc-800/30 p-4 space-y-4">
               {/* Row 1: Distance, Pace, Moving Time */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 <Input label="Distance (km)" value={form.actualDistance} onChange={(v) => setForm({ ...form, actualDistance: v })} type="number" step="0.1" accent="emerald" />
                 <Input label="Pace (min/km)" value={form.actualPace} onChange={(v) => setForm({ ...form, actualPace: v })} placeholder="6:30" accent="emerald" />
                 <div>
@@ -233,7 +233,7 @@ export default function RunningPage() {
                 </div>
               </div>
               {/* Row 2: Elev Gain, Max Elev, Warmup, Legs */}
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-3">
                 <Input label="Elev. Gain (m)" value={form.elevationGain} onChange={(v) => setForm({ ...form, elevationGain: v })} type="number" accent="emerald" />
                 <Input label="Max Elev. (m)" value={form.maxElevation} onChange={(v) => setForm({ ...form, maxElevation: v })} type="number" accent="emerald" />
                 <div>
@@ -278,7 +278,7 @@ export default function RunningPage() {
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-emerald-600/50 disabled:to-emerald-500/50 text-white py-2.5 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] shadow-lg shadow-emerald-500/10"
+              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-emerald-600/50 disabled:to-emerald-500/50 text-white py-3 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] shadow-lg shadow-emerald-500/10"
             >
               {saving ? (
                 <span className="flex items-center justify-center gap-2">
