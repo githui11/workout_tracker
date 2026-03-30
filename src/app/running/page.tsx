@@ -65,7 +65,6 @@ export default function RunningPage() {
     movingTime: '',
     elevationGain: '',
     maxElevation: '',
-    warmupDone: '',
     howLegsFeel: '',
     notes: '',
   });
@@ -81,7 +80,6 @@ export default function RunningPage() {
       movingTime: s.movingTime || '',
       elevationGain: s.elevationGain?.toString() || '',
       maxElevation: s.maxElevation?.toString() || '',
-      warmupDone: s.warmupDone || '',
       howLegsFeel: s.howLegsFeel || '',
       notes: s.notes || '',
     });
@@ -194,9 +192,9 @@ export default function RunningPage() {
       {/* LOG TAB */}
       {tab === 'log' && (
         <div className="animate-fadeInUp delay-2">
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Top bar: date + target + edit state */}
-            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl px-4 py-3 border border-zinc-800/30 flex items-center justify-between gap-2">
+            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl px-4 py-3.5 border border-zinc-800/30 flex items-center justify-between gap-2">
               <div className="flex items-center gap-3">
                 {editingOriginalDate ? (
                   <>
@@ -219,9 +217,9 @@ export default function RunningPage() {
             </div>
 
             {/* All fields in one card */}
-            <div className="bg-zinc-900/40 rounded-xl border border-zinc-800/30 p-4 space-y-4">
+            <div className="bg-zinc-900/40 rounded-xl border border-zinc-800/30 p-5 space-y-5">
               {/* Row 1: Distance, Pace, Moving Time */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-4">
                 <Input label="Distance (km)" value={form.actualDistance} onChange={(v) => setForm({ ...form, actualDistance: v })} type="number" step="0.1" accent="emerald" />
                 <Input label="Pace (min/km)" value={form.actualPace} onChange={(v) => setForm({ ...form, actualPace: v })} placeholder="6:30" accent="emerald" />
                 <div>
@@ -232,53 +230,42 @@ export default function RunningPage() {
                   />
                 </div>
               </div>
-              {/* Row 2: Elev Gain, Max Elev, Warmup, Legs */}
-              <div className="grid grid-cols-4 gap-3">
+              {/* Row 2: Elevations */}
+              <div className="grid grid-cols-2 gap-4">
                 <Input label="Elev. Gain (m)" value={form.elevationGain} onChange={(v) => setForm({ ...form, elevationGain: v })} type="number" accent="emerald" />
                 <Input label="Max Elev. (m)" value={form.maxElevation} onChange={(v) => setForm({ ...form, maxElevation: v })} type="number" accent="emerald" />
-                <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1">Warm-up?</label>
-                  <select
-                    value={form.warmupDone}
-                    onChange={(e) => setForm({ ...form, warmupDone: e.target.value })}
-                    className="w-full bg-zinc-900/80 rounded-lg px-2 py-2 text-sm border border-zinc-800/60 focus:border-emerald-500/50 focus:outline-none transition-all"
-                  >
-                    <option value="">--</option>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1">Legs</label>
-                  <select
-                    value={form.howLegsFeel}
-                    onChange={(e) => setForm({ ...form, howLegsFeel: e.target.value })}
-                    className="w-full bg-zinc-900/80 rounded-lg px-2 py-2 text-sm border border-zinc-800/60 focus:border-emerald-500/50 focus:outline-none transition-all"
-                  >
-                    <option value="">--</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                  </select>
-                </div>
+              </div>
+              {/* Row 3: Legs */}
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">How Legs Feel</label>
+                <select
+                  value={form.howLegsFeel}
+                  onChange={(e) => setForm({ ...form, howLegsFeel: e.target.value })}
+                  className="w-full bg-zinc-900/80 rounded-xl px-3.5 py-2.5 text-sm border border-zinc-800/60 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all"
+                >
+                  <option value="">--</option>
+                  <option value="1">1 - Wrecked</option>
+                  <option value="2">2 - Sore</option>
+                  <option value="3">3 - Tired</option>
+                  <option value="4">4 - OK</option>
+                  <option value="5">5 - Good</option>
+                  <option value="6">6 - Fresh</option>
+                </select>
               </div>
               {/* Notes */}
               <textarea
-                rows={1}
+                rows={2}
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 placeholder="Notes"
-                className={`w-full bg-zinc-900/80 rounded-lg px-3 py-2 text-sm border ${form.notes ? 'border-zinc-700' : 'border-zinc-800/60'} focus:border-emerald-500/50 focus:outline-none transition-all placeholder:text-zinc-600 resize-none`}
+                className={`w-full bg-zinc-900/80 rounded-xl px-3.5 py-2.5 text-sm border ${form.notes ? 'border-zinc-700' : 'border-zinc-800/60'} focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all placeholder:text-zinc-600 resize-none`}
               />
             </div>
 
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-emerald-600/50 disabled:to-emerald-500/50 text-white py-3 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] shadow-lg shadow-emerald-500/10"
+              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-emerald-600/50 disabled:to-emerald-500/50 text-white py-3.5 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] shadow-lg shadow-emerald-500/10"
             >
               {saving ? (
                 <span className="flex items-center justify-center gap-2">
