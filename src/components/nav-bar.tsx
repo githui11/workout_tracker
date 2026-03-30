@@ -32,20 +32,6 @@ function CycleIcon({ active }: { active: boolean }) {
   );
 }
 
-function MealsIcon({ active }: { active: boolean }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-      {/* Fork and knife */}
-      <path d="M3 3v6a3 3 0 003 3h0v9" />
-      <path d="M3 3h0a3 6 0 006 0" />
-      <path d="M9 3v6a3 3 0 01-3 3" />
-      <line x1="6" y1="3" x2="6" y2="9" />
-      <path d="M18 3v4a4 4 0 01-4 4h0" />
-      <path d="M18 3a1 6 0 012 0v4a4 4 0 01-4 4h0v10" />
-    </svg>
-  );
-}
-
 function MoreIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -67,7 +53,6 @@ const tabs = [
   { href: '/', label: 'Home', Icon: HomeIcon, activeColor: 'text-white' },
   { href: '/running', label: 'Run', Icon: RunIcon, activeColor: 'text-emerald-400' },
   { href: '/cycling', label: 'Cycle', Icon: CycleIcon, activeColor: 'text-blue-400' },
-  { href: '/meals', label: 'Meals', Icon: MealsIcon, activeColor: 'text-orange-400' },
   { href: '/more', label: 'More', Icon: MoreIcon, activeColor: 'text-zinc-300' },
 ];
 

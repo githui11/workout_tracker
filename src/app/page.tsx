@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import StatCard from '@/components/stat-card';
-import type { WeeklySummary, Adaptation, BodyWeightEntry, MealEntry, NutritionGoals } from '@/lib/types';
+import type { WeeklySummary, Adaptation, BodyWeightEntry } from '@/lib/types';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -17,30 +17,19 @@ export default function Dashboard() {
   const [summary, setSummary] = useState<WeeklySummary | null>(null);
   const [adaptations, setAdaptations] = useState<Adaptation[]>([]);
   const [latestWeight, setLatestWeight] = useState<BodyWeightEntry | null>(null);
-  const [todayCalories, setTodayCalories] = useState<number>(0);
-  const [calorieGoal, setCalorieGoal] = useState<number>(2500);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
     Promise.all([
       fetch('/api/summary').then((r) => r.json()),
       fetch('/api/adapt').then((r) => r.json()),
       fetch('/api/bodyweight').then((r) => r.json()),
-      fetch(`/api/meals?date=${today}`).then((r) => r.json()).catch(() => []),
-      fetch('/api/nutrition-goals').then((r) => r.json()).catch(() => null),
     ])
-      .then(([sum, adapt, weightEntries, meals, goals]) => {
+      .then(([sum, adapt, weightEntries]) => {
         setSummary(sum);
         setAdaptations(adapt.adaptations || []);
         if (Array.isArray(weightEntries) && weightEntries.length > 0) {
           setLatestWeight(weightEntries[weightEntries.length - 1]);
-        }
-        if (Array.isArray(meals)) {
-          setTodayCalories(Math.round(meals.reduce((s: number, m: MealEntry) => s + m.calories * m.servings, 0)));
-        }
-        if (goals && !goals.error) {
-          setCalorieGoal(goals.calories);
         }
       })
       .catch(console.error)
@@ -155,16 +144,6 @@ export default function Dashboard() {
             <div className="text-right">
               <span className="text-sm font-semibold">{summary.cycling.totalMinutes} min</span>
               <span className="text-xs text-zinc-500 ml-2">{summary.cycling.sessionsCompleted}/{summary.cycling.sessionsPlanned} rides</span>
-            </div>
-          </div>
-          <div className="px-4 py-3.5 flex justify-between items-center">
-            <div className="flex items-center gap-2.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-              <span className="text-sm text-zinc-400">Nutrition today</span>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-semibold">{todayCalories} cal</span>
-              <span className="text-xs text-zinc-500 ml-2">/ {calorieGoal}</span>
             </div>
           </div>
         </div>

@@ -34,3 +34,4 @@ This is a Next.js 16 App Router project (see `node_modules/next/dist/docs/` for 
 
 - **Weights section** — completely removed (page, API route, types, nav tab, dashboard card, adaptation logic). DB tables (`weights_sections`, `weights_sessions`) still exist but are unused.
 - **Cycling fields** — only `actualDuration` and `notes` are used. All other columns (rpe, heart rate, speed, resistance, elevation, calories, moving_time) still exist in the DB but are not read or written by the app.
+- **Meals & nutrition** — completely removed (page, API routes, types, nav tab, dashboard nutrition card, default foods). DB tables (`meal_entries`, `foods`, `nutrition_goals`) may still exist but are unused.
