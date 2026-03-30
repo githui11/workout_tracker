@@ -194,9 +194,9 @@ export default function RunningPage() {
       {/* LOG TAB */}
       {tab === 'log' && (
         <div className="animate-fadeInUp delay-2">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-2">
             {/* Session info card */}
-            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-2xl p-4 space-y-2.5 border border-zinc-800/30">
+            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-2xl p-3 space-y-2 border border-zinc-800/30">
               {isAdHoc && !editingOriginalDate && (
                 <div className="text-xs font-semibold text-amber-400 bg-amber-500/[0.06] rounded-lg px-3 py-1.5 mb-2 text-center border border-amber-500/15">
                   Ad-hoc session
@@ -219,27 +219,17 @@ export default function RunningPage() {
                 />
               </div>
               {!isAdHoc && !editingOriginalDate && (
-                <>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-zinc-500">Phase</span>
-                    <span className="text-xs font-medium text-zinc-300">{currentSession.phase}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-zinc-500">Workout</span>
-                    <span className="font-semibold text-emerald-400">{currentSession.workoutType}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-zinc-500">Target</span>
-                    <span className="font-medium">{currentSession.targetDistance} km @ {currentSession.targetPace}</span>
-                  </div>
-                </>
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-500">Target</span>
+                  <span className="font-medium">{currentSession.targetDistance} km @ {currentSession.targetPace}</span>
+                </div>
               )}
             </div>
 
             {/* Performance group */}
-            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-4 space-y-3">
+            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-3 space-y-2">
               <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.12em]">Performance</h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <Input label="Distance (km)" value={form.actualDistance} onChange={(v) => setForm({ ...form, actualDistance: v })} type="number" step="0.1" accent="emerald" />
                 <Input label="Pace (min/km)" value={form.actualPace} onChange={(v) => setForm({ ...form, actualPace: v })} placeholder="6:30" accent="emerald" />
               </div>
@@ -253,20 +243,20 @@ export default function RunningPage() {
             </div>
 
             {/* Terrain group */}
-            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-4 space-y-3">
+            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-3 space-y-2">
               <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.12em]">Terrain</h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <Input label="Elev. Gain (m)" value={form.elevationGain} onChange={(v) => setForm({ ...form, elevationGain: v })} type="number" accent="emerald" />
                 <Input label="Max Elev. (m)" value={form.maxElevation} onChange={(v) => setForm({ ...form, maxElevation: v })} type="number" accent="emerald" />
               </div>
             </div>
 
             {/* Recovery group */}
-            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-4 space-y-3">
+            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-3 space-y-2">
               <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.12em]">Recovery</h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Warm-up?</label>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">Warm-up?</label>
                   <select
                     value={form.warmupDone}
                     onChange={(e) => setForm({ ...form, warmupDone: e.target.value })}
@@ -278,7 +268,7 @@ export default function RunningPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">How Legs Feel</label>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">How Legs Feel</label>
                   <select
                     value={form.howLegsFeel}
                     onChange={(e) => setForm({ ...form, howLegsFeel: e.target.value })}
@@ -295,9 +285,9 @@ export default function RunningPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Notes</label>
+                <label className="block text-xs font-medium text-zinc-400 mb-1">Notes</label>
                 <textarea
-                  rows={3}
+                  rows={1}
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   className={`w-full bg-zinc-900/80 rounded-xl px-3.5 py-2.5 text-sm border ${form.notes ? 'border-zinc-700' : 'border-zinc-800/60'} focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all placeholder:text-zinc-700 resize-none`}
@@ -465,7 +455,7 @@ function Input({
 
   return (
     <div>
-      <label className="block text-xs font-medium text-zinc-400 mb-1.5">{label}</label>
+      <label className="block text-xs font-medium text-zinc-400 mb-1">{label}</label>
       <input
         type={type}
         inputMode={type === 'number' ? 'decimal' : undefined}
