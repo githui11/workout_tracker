@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import type { CyclingSession, Adaptation } from '@/lib/types';
 import dynamic from 'next/dynamic';
 import DurationPicker, { formatDuration } from '@/components/duration-picker';
@@ -54,11 +54,15 @@ export default function CyclingPage() {
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [form, setForm] = useState({ howLegsFeel: '', notes: '' });
   const [editingOriginalDate, setEditingOriginalDate] = useState<string | null>(null);
+  const justSaved = useRef(false);
 
   useEffect(() => {
+    if (justSaved.current) {
+      justSaved.current = false;
+      return;
+    }
     setLogDate(currentSession.date);
     if (currentSession.actualDuration !== null) {
-      // existing data stored as minutes → convert to seconds
       setDurationSeconds((currentSession.actualDuration ?? 0) * 60);
       setForm({
         howLegsFeel: currentSession.howLegsFeel || '',
@@ -92,6 +96,7 @@ export default function CyclingPage() {
         if (data.adaptations?.length > 0) {
           setAdaptations(data.adaptations);
         }
+        justSaved.current = true;
         const updated = await fetch('/api/cycling').then((r) => r.json());
         setSessions(updated);
         setDurationSeconds(0);
@@ -177,11 +182,6 @@ export default function CyclingPage() {
               {isAdHoc && (
                 <div className="text-xs font-semibold text-amber-400 bg-amber-500/[0.06] rounded-lg px-3 py-1.5 mb-2 text-center border border-amber-500/15">
                   Ad-hoc session
-                </div>
-              )}
-              {isCarryOver && (
-                <div className="text-xs font-semibold text-blue-400 bg-blue-500/[0.06] rounded-lg px-3 py-1.5 mb-2 text-center border border-blue-500/15">
-                  Carried over from {currentSession.date} ({currentSession.day})
                 </div>
               )}
               <div className="flex justify-between items-center text-sm">
