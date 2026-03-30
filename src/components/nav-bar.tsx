@@ -32,19 +32,12 @@ function CycleIcon({ active }: { active: boolean }) {
   );
 }
 
-function MoreIcon({ active }: { active: boolean }) {
+function WeightIcon({ active }: { active: boolean }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
-      {/* Grid / more dots */}
-      <circle cx="5" cy="5" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="19" cy="5" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="19" cy="19" r="1.5" fill="currentColor" stroke="none" />
+      <ellipse cx="12" cy="16" rx="9" ry="5" />
+      <path d="M5 12a9 5 0 0114 0" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
@@ -53,7 +46,7 @@ const tabs = [
   { href: '/', label: 'Home', Icon: HomeIcon, activeColor: 'text-white' },
   { href: '/running', label: 'Run', Icon: RunIcon, activeColor: 'text-emerald-400' },
   { href: '/cycling', label: 'Cycle', Icon: CycleIcon, activeColor: 'text-blue-400' },
-  { href: '/more', label: 'More', Icon: MoreIcon, activeColor: 'text-zinc-300' },
+  { href: '/bodyweight', label: 'Weight', Icon: WeightIcon, activeColor: 'text-purple-400' },
 ];
 
 export default function NavBar() {
