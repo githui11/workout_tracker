@@ -1,6 +1,6 @@
 import { RunningSession, CyclingSession, WeeklySummary } from './types';
 
-const PLAN_START = new Date('2026-03-24');
+const PLAN_START = new Date('2026-03-23');
 
 export function getCurrentWeek(): number {
   const now = new Date();
