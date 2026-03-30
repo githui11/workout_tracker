@@ -52,7 +52,7 @@ export default function RunningPage() {
     movingTime: null,
     elevationGain: null,
     maxElevation: null,
-    warmupDone: '',
+
     howLegsFeel: '',
     notes: '',
   } as RunningSession;
@@ -89,7 +89,7 @@ export default function RunningPage() {
   function handleCancelEdit() {
     setEditingOriginalDate(null);
     setLogDate(today);
-    setForm({ actualDistance: '', actualPace: '', duration: '', movingTime: '', elevationGain: '', maxElevation: '', warmupDone: '', howLegsFeel: '', notes: '' });
+    setForm({ actualDistance: '', actualPace: '', duration: '', movingTime: '', elevationGain: '', maxElevation: '', howLegsFeel: '', notes: '' });
   }
 
   async function handleDelete() {
@@ -129,7 +129,7 @@ export default function RunningPage() {
         }
         const updated = await fetch('/api/running').then((r) => r.json());
         setSessions(updated);
-        setForm({ actualDistance: '', actualPace: '', duration: '', movingTime: '', elevationGain: '', maxElevation: '', warmupDone: '', howLegsFeel: '', notes: '' });
+        setForm({ actualDistance: '', actualPace: '', duration: '', movingTime: '', elevationGain: '', maxElevation: '', howLegsFeel: '', notes: '' });
         setEditingOriginalDate(null);
         setLogDate(today);
       } else {
