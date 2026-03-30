@@ -171,7 +171,7 @@ export default function RunningPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       <h1 className="text-2xl font-bold tracking-tight animate-fadeInUp">Running</h1>
 
       {/* Tab switcher */}
@@ -195,72 +195,53 @@ export default function RunningPage() {
       {tab === 'log' && (
         <div className="animate-fadeInUp delay-2">
           <form onSubmit={handleSubmit} className="space-y-2">
-            {/* Session info card */}
-            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-2xl p-3 space-y-2 border border-zinc-800/30">
-              {isAdHoc && !editingOriginalDate && (
-                <div className="text-xs font-semibold text-amber-400 bg-amber-500/[0.06] rounded-lg px-3 py-1.5 mb-2 text-center border border-amber-500/15">
-                  Ad-hoc session
-                </div>
-              )}
-              {editingOriginalDate && (
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-semibold text-emerald-400">Editing session</span>
-                  <button type="button" onClick={handleCancelEdit} className="text-xs text-zinc-500 hover:text-zinc-300">Cancel</button>
-                </div>
-              )}
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-zinc-500">Date</span>
-                <input
-                  type="date"
-                  max={today}
-                  value={logDate}
-                  onChange={(e) => setLogDate(e.target.value)}
-                  className="bg-transparent text-right font-medium focus:outline-none text-white"
-                />
+            {/* Top bar: date + target + edit state */}
+            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl px-3 py-2 border border-zinc-800/30 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3">
+                {editingOriginalDate ? (
+                  <>
+                    <span className="text-xs font-semibold text-emerald-400">Editing</span>
+                    <button type="button" onClick={handleCancelEdit} className="text-xs text-zinc-500 hover:text-zinc-300">Cancel</button>
+                  </>
+                ) : isAdHoc ? (
+                  <span className="text-xs font-semibold text-amber-400">Ad-hoc</span>
+                ) : (
+                  <span className="text-xs text-zinc-500">{currentSession.targetDistance} km @ {currentSession.targetPace}</span>
+                )}
               </div>
-              {!isAdHoc && !editingOriginalDate && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500">Target</span>
-                  <span className="font-medium">{currentSession.targetDistance} km @ {currentSession.targetPace}</span>
-                </div>
-              )}
+              <input
+                type="date"
+                max={today}
+                value={logDate}
+                onChange={(e) => setLogDate(e.target.value)}
+                className="bg-transparent text-right text-sm font-medium focus:outline-none text-white"
+              />
             </div>
 
-            {/* Performance group */}
-            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-3 space-y-2">
-              <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.12em]">Performance</h3>
-              <div className="grid grid-cols-2 gap-2">
+            {/* All fields in one card */}
+            <div className="bg-zinc-900/40 rounded-xl border border-zinc-800/30 p-3 space-y-2">
+              {/* Row 1: Distance, Pace, Moving Time */}
+              <div className="grid grid-cols-3 gap-2">
                 <Input label="Distance (km)" value={form.actualDistance} onChange={(v) => setForm({ ...form, actualDistance: v })} type="number" step="0.1" accent="emerald" />
                 <Input label="Pace (min/km)" value={form.actualPace} onChange={(v) => setForm({ ...form, actualPace: v })} placeholder="6:30" accent="emerald" />
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">Moving Time</label>
+                  <DurationPicker
+                    value={parseTimeString(form.movingTime)}
+                    onChange={(secs) => setForm({ ...form, movingTime: secondsToTimeString(secs) })}
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1">Moving Time</label>
-                <DurationPicker
-                  value={parseTimeString(form.movingTime)}
-                  onChange={(secs) => setForm({ ...form, movingTime: secondsToTimeString(secs) })}
-                />
-              </div>
-            </div>
-
-            {/* Terrain group */}
-            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-3 space-y-2">
-              <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.12em]">Terrain</h3>
-              <div className="grid grid-cols-2 gap-2">
+              {/* Row 2: Elev Gain, Max Elev, Warmup, Legs */}
+              <div className="grid grid-cols-4 gap-2">
                 <Input label="Elev. Gain (m)" value={form.elevationGain} onChange={(v) => setForm({ ...form, elevationGain: v })} type="number" accent="emerald" />
                 <Input label="Max Elev. (m)" value={form.maxElevation} onChange={(v) => setForm({ ...form, maxElevation: v })} type="number" accent="emerald" />
-              </div>
-            </div>
-
-            {/* Recovery group */}
-            <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/30 p-3 space-y-2">
-              <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.12em]">Recovery</h3>
-              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-zinc-400 mb-1">Warm-up?</label>
                   <select
                     value={form.warmupDone}
                     onChange={(e) => setForm({ ...form, warmupDone: e.target.value })}
-                    className="w-full bg-zinc-900/80 rounded-xl px-3.5 py-2.5 text-sm border border-zinc-800/60 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all"
+                    className="w-full bg-zinc-900/80 rounded-lg px-2 py-2 text-sm border border-zinc-800/60 focus:border-emerald-500/50 focus:outline-none transition-all"
                   >
                     <option value="">--</option>
                     <option value="Yes">Yes</option>
@@ -268,37 +249,36 @@ export default function RunningPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1">How Legs Feel</label>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1">Legs</label>
                   <select
                     value={form.howLegsFeel}
                     onChange={(e) => setForm({ ...form, howLegsFeel: e.target.value })}
-                    className="w-full bg-zinc-900/80 rounded-xl px-3.5 py-2.5 text-sm border border-zinc-800/60 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all"
+                    className="w-full bg-zinc-900/80 rounded-lg px-2 py-2 text-sm border border-zinc-800/60 focus:border-emerald-500/50 focus:outline-none transition-all"
                   >
                     <option value="">--</option>
-                    <option value="1">1 - Wrecked</option>
-                    <option value="2">2 - Sore</option>
-                    <option value="3">3 - Tired</option>
-                    <option value="4">4 - OK</option>
-                    <option value="5">5 - Good</option>
-                    <option value="6">6 - Fresh</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
                   </select>
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-1">Notes</label>
-                <textarea
-                  rows={1}
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className={`w-full bg-zinc-900/80 rounded-xl px-3.5 py-2.5 text-sm border ${form.notes ? 'border-zinc-700' : 'border-zinc-800/60'} focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all placeholder:text-zinc-700 resize-none`}
-                />
-              </div>
+              {/* Notes */}
+              <textarea
+                rows={1}
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                placeholder="Notes"
+                className={`w-full bg-zinc-900/80 rounded-lg px-3 py-2 text-sm border ${form.notes ? 'border-zinc-700' : 'border-zinc-800/60'} focus:border-emerald-500/50 focus:outline-none transition-all placeholder:text-zinc-600 resize-none`}
+              />
             </div>
 
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-emerald-600/50 disabled:to-emerald-500/50 text-white py-3.5 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] shadow-lg shadow-emerald-500/10"
+              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-emerald-600/50 disabled:to-emerald-500/50 text-white py-2.5 rounded-xl font-semibold transition-all duration-200 active:scale-[0.98] shadow-lg shadow-emerald-500/10"
             >
               {saving ? (
                 <span className="flex items-center justify-center gap-2">
