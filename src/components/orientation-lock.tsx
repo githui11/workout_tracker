@@ -16,7 +16,8 @@ export default function OrientationLock() {
     lockOrientation();
     document.addEventListener('visibilitychange', lockOrientation);
 
-    const check = () => setIsLandscape(window.innerWidth > window.innerHeight);
+    const isMobile = window.matchMedia('(pointer: coarse)').matches;
+    const check = () => setIsLandscape(isMobile && window.innerWidth > window.innerHeight);
     check();
     window.addEventListener('resize', check);
     window.addEventListener('orientationchange', check);
