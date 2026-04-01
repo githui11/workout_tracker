@@ -30,7 +30,7 @@ export function generateAdaptations(
 
 function analyzeRunning(sessions: RunningSession[], currentWeek: number): Adaptation[] {
   const adaptations: Adaptation[] = [];
-  const recentWeeks = [currentWeek - 1, currentWeek - 2].filter((w) => w > 0);
+  const recentWeeks = [currentWeek, currentWeek - 1, currentWeek - 2].filter((w) => w > 0);
 
   const recentCompleted = sessions.filter(
     (s) => recentWeeks.includes(s.week) && s.actualDistance !== null
@@ -112,7 +112,7 @@ function analyzeRunning(sessions: RunningSession[], currentWeek: number): Adapta
 
 function analyzeCycling(sessions: CyclingSession[], currentWeek: number): Adaptation[] {
   const adaptations: Adaptation[] = [];
-  const recentWeeks = [currentWeek - 1, currentWeek - 2].filter((w) => w > 0);
+  const recentWeeks = [currentWeek, currentWeek - 1, currentWeek - 2].filter((w) => w > 0);
 
   const recentCompleted = sessions.filter(
     (s) => recentWeeks.includes(s.week) && s.actualDuration !== null
