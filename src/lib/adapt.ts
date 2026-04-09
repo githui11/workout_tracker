@@ -142,11 +142,11 @@ function analyzeCycling(sessions: CyclingSession[], currentWeek: number): Adapta
   // Check for missed sessions
   const lastWeekSessions = sessions.filter((s) => s.week === currentWeek - 1);
   const lastWeekCompleted = lastWeekSessions.filter((s) => s.actualDuration !== null);
-  if (lastWeekSessions.length >= 2 && lastWeekCompleted.length < 1) {
+  if (lastWeekSessions.length >= 3 && lastWeekCompleted.length < 1) {
     adaptations.push({
       type: 'hold_progress',
       category: 'cycling',
-      message: `Only ${lastWeekCompleted.length}/${lastWeekSessions.length} cycling sessions completed last week. Holding targets.`,
+      message: `Only ${lastWeekCompleted.length} cycling sessions completed last week. Holding targets.`,
       severity: 'info',
     });
   }
