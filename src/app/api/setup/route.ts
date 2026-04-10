@@ -138,13 +138,18 @@ export async function GET() {
     // --- CYCLING ---
     for (let d = new Date(START); d <= END; d.setDate(d.getDate() + 1)) {
       const dow = d.getDay();
-      if (dow !== 6 && dow !== 0) continue; // Sat, Sun
+      if (dow !== 5 && dow !== 6 && dow !== 0) continue; // Fri, Sat, Sun
 
       const wk = weekNum(d);
       const isDeload = wk % 4 === 0;
       let target: number, note: string;
 
-      if (dow === 6) { // Saturday
+      if (dow === 5) { // Friday
+        const base = 45 + (wk - 1) * 1.0;
+        target = Math.min(Math.round(base), 90);
+        if (isDeload) target = Math.round(target * 0.85);
+        note = isDeload ? 'DELOAD - easy spin' : 'Short Friday ride';
+      } else if (dow === 6) { // Saturday
         const base = 55 + (wk - 1) * 1.5;
         target = Math.min(Math.round(base), 120);
         if (isDeload) target = Math.round(target * 0.85);
@@ -157,7 +162,7 @@ export async function GET() {
       }
 
       const dateStr = d.toISOString().split('T')[0];
-      const dayName = dow === 6 ? 'Saturday' : 'Sunday';
+      const dayName = dow === 5 ? 'Friday' : dow === 6 ? 'Saturday' : 'Sunday';
 
       await sql`INSERT INTO cycling_sessions (week, date, day, time, target_duration, notes)
         VALUES (${wk}, ${dateStr}, ${dayName}, 'Evening', ${target}, ${note})

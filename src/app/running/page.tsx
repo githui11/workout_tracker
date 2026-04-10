@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import type { RunningSession, Adaptation } from '@/lib/types';
-import DurationPicker, { parseTimeString, secondsToTimeString } from '@/components/duration-picker';
 import dynamic from 'next/dynamic';
 
 const ProgressChart = dynamic(() => import('@/components/progress-chart'), {
@@ -239,13 +238,7 @@ export default function RunningPage() {
               <div className="grid grid-cols-3 gap-4">
                 <Input label="Distance (km)" value={form.actualDistance} onChange={(v) => setForm({ ...form, actualDistance: v })} type="number" step="0.1" accent="emerald" />
                 <Input label="Pace (min/km)" value={form.actualPace} onChange={(v) => setForm({ ...form, actualPace: v })} placeholder="6:30" accent="emerald" />
-                <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1">Moving Time</label>
-                  <DurationPicker
-                    value={parseTimeString(form.movingTime)}
-                    onChange={(secs) => setForm({ ...form, movingTime: secondsToTimeString(secs) })}
-                  />
-                </div>
+                <Input label="Moving Time" value={form.movingTime} onChange={(v) => setForm({ ...form, movingTime: v })} placeholder="1:23:45" accent="emerald" />
               </div>
               {/* Row 2: Elevations */}
               <div className="grid grid-cols-2 gap-4">
