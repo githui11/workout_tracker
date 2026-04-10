@@ -82,10 +82,10 @@ function analyzeRunning(sessions: RunningSession[], currentWeek: number): Adapta
     }
 
     const allFast = paceComparisons.every((p) => p.actual < p.targetMid * 0.95);
-    // Only progress if: beating pace targets AND legs feel good (4+) AND no missed sessions last week
-    const lastWeekSessionsForPace = sessions.filter((s) => s.week === currentWeek - 1);
-    const lastWeekCompletedForPace = lastWeekSessionsForPace.filter((s) => s.actualDistance !== null);
-    const noMissedLastWeek = lastWeekSessionsForPace.length === 0 || lastWeekCompletedForPace.length >= lastWeekSessionsForPace.length;
+    // Only progress if: beating pace targets AND legs feel good (4+) AND no missed planned sessions last week
+    const plannedLastWeekForPace = sessions.filter((s) => s.week === currentWeek - 1 && s.time !== 'Ad-hoc');
+    const completedPlannedLastWeekForPace = plannedLastWeekForPace.filter((s) => s.actualDistance !== null);
+    const noMissedLastWeek = plannedLastWeekForPace.length === 0 || completedPlannedLastWeekForPace.length >= plannedLastWeekForPace.length;
     if (allFast && legFeelScores.length > 0 && legFeelScores.every((s) => s >= 5) && noMissedLastWeek) {
       adaptations.push({
         type: 'increase_volume',
@@ -96,13 +96,14 @@ function analyzeRunning(sessions: RunningSession[], currentWeek: number): Adapta
     }
   }
 
-  const lastWeekSessions = sessions.filter((s) => s.week === currentWeek - 1);
-  const lastWeekCompleted = lastWeekSessions.filter((s) => s.actualDistance !== null);
-  if (lastWeekSessions.length >= 3 && lastWeekCompleted.length < 2) {
+  const plannedLastWeek = sessions.filter((s) => s.week === currentWeek - 1 && s.time !== 'Ad-hoc');
+  const completedLastWeek = sessions.filter((s) => s.week === currentWeek - 1 && s.actualDistance !== null);
+  const completedPlannedLastWeek = plannedLastWeek.filter((s) => s.actualDistance !== null);
+  if (plannedLastWeek.length >= 3 && completedPlannedLastWeek.length < 2) {
     adaptations.push({
       type: 'hold_progress',
       category: 'running',
-      message: `Only ${lastWeekCompleted.length}/${lastWeekSessions.length} runs completed last week. Holding targets instead of progressing.`,
+      message: `Only ${completedLastWeek.length}/${plannedLastWeek.length} planned runs completed last week. Holding targets instead of progressing.`,
       severity: 'info',
     });
   }
@@ -151,7 +152,7 @@ function analyzeCycling(sessions: CyclingSession[], currentWeek: number): Adapta
     });
   }
 
-  // Check if consistently exceeding targets — only progress if no missed sessions
+  // Check if consistently exceeding targets — only progress if no missed planned sessions
   if (recentCompleted.length >= 2) {
     const allOverTarget = recentCompleted.every((s) => (s.actualDuration || 0) > s.targetDuration * 1.15);
     const noMissedLastWeek = lastWeekSessions.length === 0 || lastWeekCompleted.length >= lastWeekSessions.length;
