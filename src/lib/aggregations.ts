@@ -46,6 +46,7 @@ export function buildWeeklySummary(
   cycling: CyclingSession[],
   week: number
 ): WeeklySummary {
+  const plannedRuns = running.filter((s) => s.time !== 'Ad-hoc');
   const completedRuns = running.filter((s) => s.actualDistance !== null);
   const totalKm = completedRuns.reduce((sum, s) => sum + (s.actualDistance || 0), 0);
   const paces = completedRuns.map((s) => parsePace(s.actualPace)).filter((p): p is number => p !== null);
@@ -58,7 +59,7 @@ export function buildWeeklySummary(
     week,
     dateRange: getWeekDateRange(week),
     running: {
-      sessionsPlanned: running.length,
+      sessionsPlanned: plannedRuns.length,
       sessionsCompleted: completedRuns.length,
       totalKm: Math.round(totalKm * 10) / 10,
       avgPace,
