@@ -82,11 +82,12 @@ function analyzeRunning(sessions: RunningSession[], currentWeek: number): Adapta
     }
 
     const allFast = paceComparisons.every((p) => p.actual < p.targetMid * 0.95);
-    // Only progress if: beating pace targets AND legs feel good (4+) AND no missed planned sessions last week
+    // Only progress if: beating pace targets AND legs feel good (avg 4+) AND no missed planned sessions last week
     const plannedLastWeekForPace = sessions.filter((s) => s.week === currentWeek - 1 && s.time !== 'Ad-hoc');
     const completedPlannedLastWeekForPace = plannedLastWeekForPace.filter((s) => s.actualDistance !== null);
     const noMissedLastWeek = plannedLastWeekForPace.length === 0 || completedPlannedLastWeekForPace.length >= plannedLastWeekForPace.length;
-    if (allFast && legFeelScores.length > 0 && legFeelScores.every((s) => s >= 5) && noMissedLastWeek) {
+    const avgRunFeel = legFeelScores.length > 0 ? legFeelScores.reduce((a, b) => a + b, 0) / legFeelScores.length : 6;
+    if (allFast && avgRunFeel >= 4 && noMissedLastWeek) {
       adaptations.push({
         type: 'increase_volume',
         category: 'running',
@@ -156,7 +157,8 @@ function analyzeCycling(sessions: CyclingSession[], currentWeek: number): Adapta
   if (recentCompleted.length >= 2) {
     const allOverTarget = recentCompleted.every((s) => (s.actualDuration || 0) > s.targetDuration * 1.15);
     const noMissedLastWeek = lastWeekSessions.length === 0 || lastWeekCompleted.length >= lastWeekSessions.length;
-    const legsGood = legFeelScores.length === 0 || legFeelScores.every((s) => s >= 5);
+    const avgFeel = legFeelScores.length > 0 ? legFeelScores.reduce((a, b) => a + b, 0) / legFeelScores.length : 6;
+    const legsGood = avgFeel >= 4;
     if (allOverTarget && noMissedLastWeek && legsGood) {
       adaptations.push({
         type: 'increase_volume',
@@ -229,10 +231,10 @@ export async function applyAdaptations(
   const applied: Adaptation[] = [];
 
   if (category === 'running') {
-    // Find earliest unlogged session (not date > savedDate) so skipped sessions are served next
+    // Only adjust sessions in future weeks — prevents intra-week target inflation
     const nextRow = await sql`
       SELECT id, target_distance FROM running_sessions
-      WHERE actual_distance IS NULL
+      WHERE actual_distance IS NULL AND week > ${currentWeek}
       ORDER BY date ASC LIMIT 1
     `;
     if (nextRow.length > 0) {
@@ -257,10 +259,11 @@ export async function applyAdaptations(
   }
 
   if (category === 'cycling') {
-    // Find earliest unlogged session so skipped sessions are served next
+    // Only adjust sessions in future weeks — prevents intra-week target inflation
+    // where logging each session within a week would compound +10 on the next same-week session
     const nextRow = await sql`
       SELECT id, target_duration FROM cycling_sessions
-      WHERE actual_duration IS NULL
+      WHERE actual_duration IS NULL AND week > ${currentWeek}
       ORDER BY date ASC LIMIT 1
     `;
     if (nextRow.length > 0) {
