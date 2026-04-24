@@ -135,7 +135,11 @@ export default function CyclingPage() {
   const totalDuration = useMemo(() => currentWeekCompleted.reduce((sum, s) => sum + (s.actualDuration || 0), 0), [currentWeekCompleted]);
   const weeklyGoal = useMemo(() => {
     const weekSessions = sessions.filter((s) => s.week === currentWeek);
-    return weekSessions.reduce((sum, s) => sum + (s.targetDuration || 0), 0);
+    return weekSessions.reduce((sum, s) => {
+      // Use actual for completed sessions, target for remaining — so goal always equals
+      // "what you'll have if you hit all remaining targets"
+      return sum + (s.actualDuration !== null ? s.actualDuration : (s.targetDuration || 0));
+    }, 0);
   }, [sessions, currentWeek]);
   const goalProgress = useMemo(() => weeklyGoal > 0 ? Math.min(100, Math.round((totalDuration / weeklyGoal) * 100)) : 0, [totalDuration, weeklyGoal]);
 
