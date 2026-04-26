@@ -38,8 +38,14 @@ export default function CyclingPage() {
   }, []);
 
   const today = new Date().toISOString().split('T')[0];
-  const earliestUnlogged = sessions.find((s) => s.actualDuration === null);
-  const todaySession = sessions.find((s) => s.date === today && s.actualDuration !== null);
+  const currentWeek = getCurrentWeek();
+
+  // Prefer today's session (logged or not), then earliest unlogged this week, then any unlogged.
+  // This prevents a stale unlogged session from a past week from hijacking the target display.
+  const todaySession = sessions.find((s) => s.date === today);
+  const earliestUnlogged =
+    sessions.find((s) => s.actualDuration === null && s.week === currentWeek) ??
+    sessions.find((s) => s.actualDuration === null);
   const plannedSession = todaySession || earliestUnlogged;
   const isAdHoc = !plannedSession;
   const currentSession = plannedSession || {
@@ -125,7 +131,6 @@ export default function CyclingPage() {
   }
 
   const completedSessions = useMemo(() => sessions.filter((s) => s.actualDuration !== null), [sessions]);
-  const currentWeek = getCurrentWeek();
   const currentWeekCompleted = useMemo(() => completedSessions.filter((s) => s.week === currentWeek), [completedSessions, currentWeek]);
   const durationData = useMemo(() => completedSessions.map((s) => ({
     label: s.date.slice(5),
