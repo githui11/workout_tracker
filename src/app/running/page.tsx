@@ -13,6 +13,11 @@ const ProgressChart = dynamic(() => import('@/components/progress-chart'), {
 
 type Tab = 'log' | 'history' | 'charts';
 
+const PLAN_START = new Date('2026-03-23').getTime();
+function getCurrentWeek() {
+  return Math.max(1, Math.floor((Date.now() - PLAN_START) / (7 * 24 * 60 * 60 * 1000)) + 1);
+}
+
 export default function RunningPage() {
   const [sessions, setSessions] = useState<RunningSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,8 +37,14 @@ export default function RunningPage() {
 
   const today = new Date().toISOString().split('T')[0];
   const todayDow = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-  const earliestUnlogged = sessions.find((s) => s.actualDistance === null);
-  const todaySession = sessions.find((s) => s.date === today && s.actualDistance !== null);
+  const currentWeek = getCurrentWeek();
+
+  // Prefer today's session (logged or not), then earliest unlogged this week.
+  // Prevents a stale unlogged session from a past week hijacking the target display.
+  const todaySession = sessions.find((s) => s.date === today);
+  const earliestUnlogged =
+    sessions.find((s) => s.actualDistance === null && s.week === currentWeek) ??
+    sessions.find((s) => s.actualDistance === null);
   const plannedSession = todaySession || earliestUnlogged;
   const isAdHoc = !plannedSession;
   const currentSession = plannedSession || {
@@ -234,14 +245,15 @@ export default function RunningPage() {
 
             {/* All fields in one card */}
             <div className="bg-zinc-900/40 rounded-xl border border-zinc-800/30 p-5 space-y-5">
-              {/* Row 1: Distance, Pace, Moving Time */}
+              {/* Row 1: Distance, Pace, Duration */}
               <div className="grid grid-cols-3 gap-4">
                 <Input label="Distance (km)" value={form.actualDistance} onChange={(v) => setForm({ ...form, actualDistance: v })} type="number" step="0.1" accent="emerald" />
                 <Input label="Pace (min/km)" value={form.actualPace} onChange={(v) => setForm({ ...form, actualPace: v })} placeholder="6:30" accent="emerald" />
-                <Input label="Moving Time" value={form.movingTime} onChange={(v) => setForm({ ...form, movingTime: v })} placeholder="1:23:45" accent="emerald" />
+                <Input label="Duration (min)" value={form.duration} onChange={(v) => setForm({ ...form, duration: v })} type="number" accent="emerald" />
               </div>
-              {/* Row 2: Elevations */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Row 2: Moving Time, Elevations */}
+              <div className="grid grid-cols-3 gap-4">
+                <Input label="Moving Time" value={form.movingTime} onChange={(v) => setForm({ ...form, movingTime: v })} placeholder="1:23:45" accent="emerald" />
                 <Input label="Elev. Gain (m)" value={form.elevationGain} onChange={(v) => setForm({ ...form, elevationGain: v })} type="number" accent="emerald" />
                 <Input label="Max Elev. (m)" value={form.maxElevation} onChange={(v) => setForm({ ...form, maxElevation: v })} type="number" accent="emerald" />
               </div>

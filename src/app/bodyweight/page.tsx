@@ -134,6 +134,7 @@ export default function BodyWeightPage() {
                 <label className="block text-xs font-medium text-zinc-400 mb-1.5">Date</label>
                 <input
                   type="date"
+                  max={today}
                   value={form.date}
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
                   className={`w-full bg-zinc-900/80 rounded-xl px-3.5 py-2.5 text-sm border ${form.date ? 'border-zinc-700' : 'border-zinc-800/60'} focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/10 focus:outline-none transition-all`}
